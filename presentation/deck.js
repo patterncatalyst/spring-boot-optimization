@@ -45,7 +45,7 @@ function divider(code, title, subtitle, notes) {
     fontFace: FONT.mono, fontSize: 10, color: COLOR.caption, align: "left", valign: "top" });
   s.addText(REV, { x: 11.85, y: 5.85, w: 0.95, h: 0.30, fontFace: FONT.mono, fontSize: 11, color: COLOR.caption, align: "right", valign: "middle" });
   try { s.addImage({ path: `${ASSETS}/logo-candidate-2.png`, x: 11.10, y: 6.80, w: 1.55, h: 0.37 }); } catch (e) {}
-  addNotes(s, "Welcome. This talk is about closing the gap between how Java was designed — owning the whole machine — and how it actually runs in Kubernetes — sharing a cgroup with 20 other pods. Everything has a live demo. All slides, code, and demos are in the GitHub repo.");
+  addNotes(s, "Welcome. This talk is about closing the gap between how Java was designed — owning the whole machine — and how it actually runs in Kubernetes — sharing a cgroup with 20 other pods. Everything has a live demo. All slides, code, and demos are in the GitHub repo. We're using Spring Boot 4.0.5 with both Java 21 and JDK 25 LTS. Core talk is 60 minutes with 3 live demos. Bonus material adds 6 more demos for a 90-minute extended session.");
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -67,7 +67,7 @@ function divider(code, title, subtitle, notes) {
       "Systematic Tuning & Cost ROI",
       { text: "Bonus: Leyden · gRPC · Latency · Panama · Valhalla", muted: true },
     ], { fontSize: 16 });
-  addNotes(s, "Seven sections, three live demos in the core 60 minutes, six bonus demos for extended sessions. The repo has all nine.");
+  addNotes(s, "Seven sections in the core talk, each building on the previous one. Sections 01-04 are the technical foundation: container JVM, right-sizing, GC, and startup (~35 min including demos). Sections 05-07 are operational: observability, autoscaling, and the business case (~20 min). The remaining 5 minutes are for takeaways and Q&A. Three core demos: Demo 01 (heap sizing, 5 min), Demo 02 (GC monitoring, 10 min), Demo 03 (AppCDS, 5 min). The purple Bonus card covers 6 additional demos for a 90-minute session.");
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -83,7 +83,7 @@ function divider(code, title, subtitle, notes) {
     { code: "$$$", name: "cloud spend", purpose: "Unnecessary spend each month — usually five or six figures annually per org." },
   ], { colW: [1.00, 2.20, 8.89] });
   addPerfCallout(s, "Default JVM reads /proc/meminfo and sees the NODE's full RAM — claims 64 GB heap inside a 512 MB container → OOMKill.");
-  addNotes(s, "These four statistics come from real customer environments. Spring Boot's 4-8s cold start comes from classpath scanning, auto-configuration resolution, and bean initialization at runtime. That's where AppCDS and Leyden give the biggest wins.");
+  addNotes(s, "These four statistics come from real customer environments. Walk through each: 60% overprovision because JVM sees /proc/meminfo (node RAM, not cgroup limit). 4-8s cold start from Spring Boot loading 10,000-15,000 classes — this is where AppCDS/Leyden give 35-55% reduction. 2-3x waste from over-requested containers. $$$: usually five or six figures annually. The callout at the bottom is the root cause of all four. Pause here — this is the 'aha' moment for people who've seen unexplained OOMKills.");
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -110,7 +110,7 @@ divider("01", "Container-Native\nJVM Fundamentals", "UseContainerSupport + MaxRA
       "-XX:NativeMemoryTracking=summary",
     ], { fontSize: 15 });
   addPerfCallout(s, "UseContainerSupport is ON by default in Java 21. Reads cgroup v2 limits. Never hardcode -Xmx in containers.");
-  addNotes(s, "UseContainerSupport is the foundational fix. It's been on by default since Java 10 but most teams don't know about MaxRAMPercentage. The old -Xmx approach breaks silently whenever a VPA changes the container limit.");
+  addNotes(s, "This is the single most impactful slide. Left column: hardcoded -Xmx breaks silently when VPA changes the container limit. /proc/meminfo reports HOST RAM — on a 64GB node, JVM sees 64GB and gets OOMKilled in a 512MB container. Right column: MaxRAMPercentage=75.0 scales dynamically with the container limit. InitialRAMPercentage=50.0 avoids initial GC pressure. NativeMemoryTracking=summary enables jcmd VM.native_memory for diagnostics. Ask: 'Who is using MaxRAMPercentage today?' Usually less than a third.");
 }
 
 // SLIDE 6 — Memory Regions
@@ -126,7 +126,7 @@ divider("01", "Container-Native\nJVM Fundamentals", "UseContainerSupport + MaxRA
     { code: "GC", name: "Bookkeeping", purpose: "50–100 MB — card tables, remembered sets" },
   ], { colW: [1.00, 2.60, 8.49], rowH: 0.40 });
   addCaption(s, "MaxRAMPercentage=75 controls ONLY the heap. The remaining 25% must cover five other regions.");
-  addNotes(s, "Setting 90% starves Metaspace and Netty buffers — OOMKills even when your heap metric looks fine. Spring Boot's auto-configuration loads many classes at startup, so Metaspace usage is on the higher end. Measure with: jcmd pid VM.native_memory summary.");
+  addNotes(s, "This table explains 'why 75% and not 90%'. Walk through each row: Heap (50-75%) controlled by MaxRAMPercentage. Metaspace (80-250MB) for class metadata — Spring Boot loads more classes than build-time frameworks, always set MaxMetaspaceSize=256m. Platform Thread Stacks (1MB/thread) — 200 threads = 200MB off-heap that heap metrics never show. Native Memory (100-300MB) for JIT and GC internals. Direct ByteBuffers for Netty/NIO. GC Bookkeeping (50-100MB). The common mistake: 90% leaves only 10% for all five off-heap regions. Diagnostic: jcmd <pid> VM.native_memory summary.");
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -153,7 +153,7 @@ divider("02", "Right-Sizing\nJava Workloads", "requests vs limits, bin-packing, 
       "Set CPU limit 2-4× request for GC spikes",
     ], { fontSize: 15 });
   addPerfCallout(s, "Demo 07: 7-workload analysis · 4 nodes → 2 nodes · +67% pod density · $6,720/month saving · 17× ROI.");
-  addNotes(s, "Most teams set requests and limits equal — that gives Guaranteed QoS (good for CPU Manager) but no GC surge headroom. Demo 07 shows this analysis on a real 7-service cluster.");
+  addNotes(s, "Key insight: requests and limits serve DIFFERENT purposes. Say it explicitly. Left: requests are for the scheduler — set to P50 steady-state RSS. Too high = pods can't schedule, too low = CPU throttle on full node. Right: limits are the hard ceiling — memory exceeded = OOMKill (exit 137), CPU exceeded = throttled (not killed). Set memory limit 25-30% above P99 RSS, CPU limit 2-4x request for GC burst. Common anti-pattern: requests = limits gives Guaranteed QoS but zero GC headroom. Demo 07 shows real analysis: 4 nodes → 2 nodes.");
 }
 
 // SLIDE 9 — Bin-Packing Before & After
@@ -174,7 +174,7 @@ divider("02", "Right-Sizing\nJava Workloads", "requests vs limits, bin-packing, 
       "2.7× more pods per node",
     ], { fontSize: 15 });
   addPerfCallout(s, "Same application, same functionality. Half the nodes needed = half the cloud bill.");
-  addNotes(s, "Same node, same 16GB of RAM. This slide should be your 'business case' slide when talking to your manager.");
+  addNotes(s, "Same node, same 16GB of RAM. Let the visual breathe for a moment. Left: 3 pods at 4GB each = 75% utilization, 4GB wasted. Right: 8 pods at 1.5GB each = 94% utilization. 2.7x more pods per node. Half the nodes. Half the cloud bill. This is the slide you show your manager when requesting time for JVM optimization work. Measure for your cluster: kubectl top pods --containers → compare against resources.requests → the gap is your waste.");
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -193,7 +193,7 @@ divider("03", "Garbage Collection\nOptimization", "G1GC · Shenandoah · ZGC · 
     "GC-Induced HPA Thrash — GC pause → CPU spike → HPA fires → new pods GC → repeat.",
     "Heap Sizing vs GC Pressure — Small heap = frequent GC. Too large = infrequent but long. Start at 75%.",
   ], { fontSize: 14 });
-  addNotes(s, "The ParallelGCThreads problem is the most surprising. Write this down: -XX:ParallelGCThreads=N where N equals resources.requests.cpu. This costs nothing and immediately improves GC pause duration.");
+  addNotes(s, "Four container GC challenges. Card 1 — CPU Throttling: CPU limits throttle GC threads mid-pause, 100ms becomes 400ms+. Fix: CPU limit 2-4x request. Card 2 — ParallelGCThreads: JVM defaults to HOST CPU count, not container limit. 64-core node + 4 CPU limit = 64 GC threads fighting for 4 CPUs. Fix: -XX:ParallelGCThreads=4. Card 3 — HPA Thrash: GC pause → CPU spike → HPA scales out → new pods GC → repeat. Fix: scale on RPS. Card 4 — Heap sizing: small heap = frequent GC, large = infrequent but long. Start at 75%.");
 }
 
 // SLIDE 12 — GC Selection Guide
@@ -207,7 +207,7 @@ divider("03", "Garbage Collection\nOptimization", "G1GC · Shenandoah · ZGC · 
     { code: "Serial GC", name: "STW", purpose: "CLI tools, batch, <256MB heap only. -XX:+UseSerialGC" },
   ], { colW: [1.80, 2.40, 7.89] });
   addCaption(s, "UBI9 ships Shenandoah. Demos 02 and 06 override to G1GC / ZGC for clean comparison.");
-  addNotes(s, "If P99 pause > 500ms, switch from G1GC to ZGC or Shenandoah. Don't tune G1GC parameters hoping to get there — switch the algorithm.");
+  addNotes(s, "Walk through each row: G1GC (50-300ms) is the default on Temurin/Corretto — tunable via MaxGCPauseMillis. Shenandoah (1-20ms) is what UBI9 ships — if you're running Red Hat images, you already have it. ZGC Generational (sub-1ms) is the low-latency option — constant pause regardless of heap size, but 5-15% throughput cost from load barriers. Serial GC: only for CLI tools or <256MB heap. Decision heuristic: if P99 GC pause exceeds 500ms, don't tune G1GC parameters — switch the algorithm to ZGC or Shenandoah.");
 }
 
 // SLIDE 13 — GC Tuning Parameters
@@ -230,7 +230,7 @@ divider("03", "Garbage Collection\nOptimization", "G1GC · Shenandoah · ZGC · 
       'ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]',
     ],
     "The JAVA_OPTS pattern lets you override at deploy time via Kubernetes env vars.");
-  addNotes(s, "ParallelGCThreads is the most commonly missed flag. Set it equal to your CPU limit. Always. The JAVA_OPTS pattern in the Dockerfile ENTRYPOINT lets you override at deploy time without rebuilding.");
+  addNotes(s, "Left: ParallelGCThreads=4 and ConcGCThreads=2 — match to CPU limit. Most commonly missed flag. ZGC needs no tuning — just enable it. Right: the JAVA_OPTS Dockerfile pattern (java $JAVA_OPTS -jar app.jar) lets you override at deploy time via Kubernetes env vars — no image rebuild needed. Different environments can use different flags from the same image. NativeMemoryTracking=summary: enable in staging for memory diagnostics (~5% overhead).");
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -250,7 +250,7 @@ divider("04", "Startup Time\nReduction", "AppCDS · 3-stage build · Virtual Thr
     { code: "0.5–1s", name: "Embedded Tomcat", purpose: "Connector start, SSL initialization, request handler registration" },
     { code: "4–8s", name: "Total baseline", purpose: "With AppCDS: 2–4s (35–55% reduction). Zero code changes." },
   ], { colW: [1.40, 3.00, 7.69], rowH: 0.42 });
-  addNotes(s, "A typical Spring Boot app loads 10,000–15,000 classes at startup. Every one benefits from the CDS archive. The spring.context.exit=onRefresh property is key — it tells Spring to exit after context init so we capture the full class list.");
+  addNotes(s, "Spring Boot's architecture is actually an advantage for optimization. Walk through the breakdown: class loading (1.5-3s) is THE bottleneck — 10,000-15,000 classes vs 3,000-5,000 for build-time frameworks. Auto-config resolution (0.5-1.5s) evaluates hundreds of @Conditional annotations. Bean instantiation (1-2s) builds the DI graph. Tomcat start (0.5-1s). Total: 4-8s baseline. With AppCDS: 35-55% reduction — much bigger than build-time frameworks (~5%) because more classes = more CDS benefit. spring.context.exit=onRefresh ensures the training run loads ALL classes.");
 }
 
 // SLIDE 16 — AppCDS 3-Stage Build
@@ -276,7 +276,7 @@ divider("04", "Startup Time\nReduction", "AppCDS · 3-stage build · Virtual Thr
       '  -XX:SharedArchiveFile=app-cds.jsa -jar app.jar"]',
     ],
     "35–55% startup reduction — the more classes your app loads, the bigger the win.", { fontSize: 10 });
-  addNotes(s, "The training stage runs Spring Boot just long enough to load all classes, then dumps the CDS archive. At runtime, the JVM memory-maps the archive for near-instant class loading. This is a Dockerfile-only change with zero application code modifications.");
+  addNotes(s, "3-stage Dockerfile: builder (compile) → trainer (dump CDS archive) → runtime (use archive). The training stage uses spring.context.exit=onRefresh — it loads all classes, evaluates all conditions, creates all beans, then exits cleanly. At runtime, -Xshare:on memory-maps the archive for near-instant class loading. This is a Dockerfile-only change with zero application code modifications. Frame positively: Spring Boot's runtime architecture means CDS has more to cache. The bigger your app, the bigger the win.");
 }
 
 // SLIDE 17 — Virtual Threads
@@ -297,7 +297,7 @@ divider("04", "Startup Time\nReduction", "AppCDS · 3-stage build · Virtual Thr
       "10,000 concurrent I/O tasks, same memory",
     ], { fontSize: 15 });
   addPerfCallout(s, "Caveat: avoid synchronized + I/O (pins carrier thread) — use ReentrantLock instead.");
-  addNotes(s, "One property in Spring Boot: spring.threads.virtual.enabled=true. This switches Tomcat's executor to virtual threads globally. A REST service that needed 512m for 200 platform threads can handle 10,000 virtual threads with the same memory.");
+  addNotes(s, "JEP 444 finalized in Java 21. One property switches Tomcat executor, @Async, and @Scheduled to virtual threads. Platform threads: 1MB stack each, OFF-heap — 200 threads = 200MB invisible memory. Virtual threads: stored as continuations ON the heap, GC-managed. 10,000 concurrent I/O tasks with minimal memory. Caveats: synchronized + I/O pins the carrier thread (use ReentrantLock), connection pools become the bottleneck (10,000 virtual threads wanting 20 connections), best for I/O-bound not CPU-bound work.");
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -317,7 +317,7 @@ divider("05", "Observability &\nInstrumentation", "JFR · Actuator · Micrometer
     "Essential: jvm_gc_pause_seconds P99 >500ms → switch GC. jvm_memory_used_bytes → heap + off-heap.",
   ], { fontSize: 14 });
   addPerfCallout(s, "Required: management.metrics.distribution.percentiles-histogram.jvm.gc.pause=true — without this, Grafana GC panels show no data.");
-  addNotes(s, "The histogram configuration is not optional. The counter tells you 'GC happened 40 times'. The histogram tells you 'GC P99 was 800ms — fire an alert'. Set this before your next deployment.");
+  addNotes(s, "'You can't tune what you can't see' — say this line. Walk through each card: JFR (built-in, <1% overhead, GC events/allocations/IO), Cryostat (OpenShift-native JFR via operator), Actuator + Micrometer (two Maven deps, all JVM metrics at /actuator/prometheus), Essential Metrics (jvm_gc_pause_seconds P99 >500ms → switch GC). The callout is the most commonly missed config: without percentiles-histogram.jvm.gc.pause=true, Prometheus exports only a counter (how many GC events) not a histogram (what pause durations were). Grafana panels show nothing without it.");
 }
 
 // SLIDE 20 — Spring Boot Actuator Config
@@ -342,7 +342,7 @@ divider("05", "Observability &\nInstrumentation", "JFR · Actuator · Micrometer
       "<!-- micrometer-registry-prometheus -->",
     ],
     "Two dependencies and three lines of configuration — that's the entire observability setup.");
-  addNotes(s, "The management.metrics.tags.application property tags every metric with your app name, which lets you filter in Grafana when running multiple services. The percentiles-histogram property is the one most teams miss.");
+  addNotes(s, "Left: three lines of application.properties — exposure, histogram, and tagging. The management.metrics.tags.application property tags every metric with your app name so you can filter in Grafana across services. Right: two Maven dependencies. That's the entire observability setup. The percentiles-histogram property is the one most teams miss — without it, GC pause data is invisible. Demo 02 shows all of this live with a Grafana LGTM stack.");
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -374,7 +374,7 @@ divider("06", "Autoscaling\nIntegration", "HPA with JVM-aware metrics",
       '    external: { metric: { name: jvm_memory_used_ratio } }',
     ],
     "minReplicas:2 is the single cheapest reliability improvement.", { fontSize: 10 });
-  addNotes(s, "Scale on RPS not CPU. GC pauses create CPU spikes — CPU-based HPA treats those as load signals and scales out. The 120s stabilisation window is longer than any normal GC pause. minReplicas:2 — one extra pod, zero downtime during GC pause.");
+  addNotes(s, "Walk through the YAML. minReplicas: 2 — NEVER 1 for a Java workload. If the single pod is in a GC pause, all requests queue. stabilizationWindowSeconds: 120 for scaleUp (absorb GC spikes without reacting), 300 for scaleDown (avoid thrashing). Metrics: use External type with http_requests_per_second instead of CPU. KEDA is easiest to set up, Prometheus Adapter is more flexible. The policies limit scaleUp to 2 pods per 60 seconds — prevents HPA avalanche during GC events.");
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -395,7 +395,7 @@ divider("07", "Systematic Tuning\n& Cost ROI", "Measure → tune → validate �
     { code: "5", name: "Validate", purpose: "Re-measure. Compare before/after. Commit or revert based on data." },
   ], { colW: [0.60, 2.00, 9.49] });
   addPerfCallout(s, "The 35–55% startup reduction from AppCDS is specific to Spring Boot — much bigger than build-time frameworks (~5%).");
-  addNotes(s, "If you accumulate five JVM flags without measuring each one, you can't attribute any improvement to any flag. The 35-55% number is specific to Spring Boot.");
+  addNotes(s, "Five steps, always in this order. Step 1: Instrument — add Actuator + Micrometer + Prometheus + GC histogram. Step 2: Baseline — measure RSS, GC pauses, startup time under realistic load for 15-30 minutes. Step 3: Diagnose — identify the bottleneck. Step 4: Tune — change ONE flag. Step 5: Validate — re-measure, compare, commit or revert. If you change five flags at once, you can't attribute any improvement. The 35-55% AppCDS number is specific to Spring Boot — build-time frameworks see ~5%.");
 }
 
 // SLIDE 25 — Cost Optimization Checklist
@@ -411,7 +411,7 @@ divider("07", "Systematic Tuning\n& Cost ROI", "Measure → tune → validate �
     { code: "30 min", name: "GC pause histogram alerting", purpose: "Catch issues before users do" },
   ], { colW: [1.20, 3.60, 7.29], rowH: 0.38 });
   addPerfCallout(s, "Total estimated effort: ~4 hours for a typical Spring Boot microservice. Every change is configuration, not code.");
-  addNotes(s, "Walk through the table top to bottom. Emphasize that every row is a configuration change — not an architectural rewrite. For a team with 10 microservices, budget two days.");
+  addNotes(s, "Walk through the table top to bottom. Emphasize the Time column — this is NOT a multi-sprint refactoring effort. Row 1: MaxRAMPercentage=75 + right-size (30 min) — highest impact, lowest effort. Row 2: AppCDS 3-stage Dockerfile (2 hrs) — longest task but still just a Dockerfile change. Row 3: ParallelGCThreads (5 min) — literally the fastest fix. Row 4: virtual threads (1 min) — one property. Row 5: HPA on RPS (1 hr) — requires KEDA or Prometheus Adapter. Row 6: GC alerting (30 min) — one property + one PrometheusRule. Total: ~4 hours for one microservice. Say: 'Every single row is a configuration change. No code rewrites.'");
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -431,7 +431,7 @@ divider("DEMO", "Live Demos", "Core: Demos 01–03 · Bonus: Demos 04–09",
     "OOMKill simulation when JVM ignores container limits",
   ], { fontSize: 16 });
   addCaption(s, "cd demo-01-heap-sizing && ./demo.sh");
-  addNotes(s, "Demo 01 is the foundational fix. Everything else in this talk builds on getting this right first.");
+  addNotes(s, "Demo 01 is the foundational fix. Walkthrough: build two containers — one misconfigured (no container support), one correct (MaxRAMPercentage=75). First container: jcmd shows heap based on HOST RAM. It will OOMKill. Second: jcmd shows heap at ~384MB (75% of 512MB limit). Key moment: the OOMKill — exit code 137. Ask: 'Has anyone seen this in production?' Most hands go up. Timing: 3-5 minutes. No external dependencies — just Podman. Fallback: the before/after jcmd output on the content slides.");
 }
 
 // SLIDE 28 — Demo 02 Recap
@@ -446,7 +446,7 @@ divider("DEMO", "Live Demos", "Core: Demos 01–03 · Bonus: Demos 04–09",
     "Virtual threads: 500 concurrent tasks, minimal platform thread count",
   ], { fontSize: 15 });
   addCaption(s, "cd demo-02-gc-monitoring && ./demo.sh  # starts podman-compose stack");
-  addNotes(s, "Demo 02 brings in the full Grafana LGTM stack. Key moment: show the GC pause histogram panel — without the percentiles-histogram property it's blank. End with virtual threads: 500 concurrent tasks, only a handful of platform threads.");
+  addNotes(s, "Demo 02 is the longest core demo — budget 8-10 minutes. Walkthrough: start podman-compose stack, open Grafana at localhost:3000, navigate to JVM dashboard. Key moment 1: GC pause histogram panel — without percentiles-histogram property it's blank. Generate GC pressure: curl /allocate?mb=50 then ?mb=100 — watch Grafana update in real time. Key moment 2: show used vs committed vs max memory metrics. Virtual threads finale: curl /threads?count=500 — 500 concurrent tasks, handful of platform threads. Fallback: curl /actuator/prometheus | grep jvm_gc_pause.");
 }
 
 // SLIDE 29 — Demo 03 Recap
@@ -461,7 +461,7 @@ divider("DEMO", "Live Demos", "Core: Demos 01–03 · Bonus: Demos 04–09",
     "Progression: AppCDS (JDK 21) → Leyden (JDK 25)",
   ], { fontSize: 15 });
   addCaption(s, "cd demo-03-appcds && ./demo.sh");
-  addNotes(s, "The 35-55% improvement is much larger for Spring Boot than for build-time frameworks (~5%). Spring Boot loads 10,000-15,000 classes at startup — every one benefits from the CDS archive.");
+  addNotes(s, "Most visually satisfying demo — startup times printed side by side. Walkthrough: builds two images (baseline and optimized), shows the 3-stage Dockerfile, runs both containers. Key moment: baseline ~4-8s, with AppCDS ~2-4s = 35-55% reduction with zero code changes. Explain why Spring Boot benefits more: 10,000-15,000 classes loaded at startup vs 3,000-5,000 for build-time frameworks. More classes = more CDS benefit. Frame positively: 'This is an optimization opportunity, not a weakness.' Timing: 3-5 minutes.");
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -479,7 +479,7 @@ divider("DEMO", "Live Demos", "Core: Demos 01–03 · Bonus: Demos 04–09",
     "Autoscale on RPS not CPU — GC pauses lie to HPA. Enable virtual threads.",
     "Quantify savings — track cost per namespace to show business value",
   ], { fontSize: 14 });
-  addNotes(s, "Read each one slowly. This is the audience's callback for their own environments.");
+  addNotes(s, "Read each takeaway slowly. Pause after each. This is the audience's callback. 1: 'How many of you are using hardcoded -Xmx today? That's the first thing to fix Monday morning.' 2: 'Measure RSS + off-heap with jcmd before touching any JVM flags.' 3: 'If P99 pause exceeds 500ms, switch to ZGC — don't try to tune G1GC.' 4: 'A Dockerfile change. Zero code modifications.' 5: 'Pick your stack but always have a baseline.' 6: 'GC pauses lie to HPA.' 7: 'Show your manager the dollar number, not the technical improvement.' If short on time, emphasize 1, 4, and 7.");
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -497,7 +497,7 @@ divider("DEMO", "Live Demos", "Core: Demos 01–03 · Bonus: Demos 04–09",
     "Virtual Threads: docs.spring.io/spring-boot/reference/features/threading.html",
     "JVM Tuning: access.redhat.com/articles/2988411",
   ], { fontSize: 14 });
-  addNotes(s, "Slides and all demos are in the GitHub repo. PRs welcome — especially if a demo breaks on your platform.");
+  addNotes(s, "Keep this slide up during Q&A. Highlight: the GitHub repo has all 9 demos, Reveal.js slides, 10 diagrams, and reference docs. PRs welcome. Optimizing Cloud Native Java (O'Reilly): chapters 3-5 cover everything in this talk. Common Q&A: 'What about GraalVM Native?' — different trade-off, closed-world AOT vs Leyden's open-world. 'Does this work with Spring Boot 3.x?' — Yes, everything except gRPC starter. 'ZGC in production?' — Yes, production-ready since JDK 15, generational since JDK 21. If time remains, offer Demo 04 (Leyden) or Demo 05 (gRPC).");
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -517,7 +517,7 @@ divider("B1", "Project Leyden", "JVM AOT Cache — JDK 25 LTS",
     { code: "Future", name: "—", purpose: "Pre-compiled native code in cache — instant peak performance" },
   ], { colW: [1.20, 2.00, 8.89] });
   addPerfCallout(s, "Spring Boot 4.0.5: Requires explicit -XX:AOTMode steps — no single-property shortcut. See Demo 04.");
-  addNotes(s, "Leyden stays on the JVM — full reflection, dynamic loading, JIT all continue to work. Native is the closed-world AOT option. Unlike some frameworks that wrap this in a single property, Spring Boot requires explicit -XX:AOTMode steps.");
+  addNotes(s, "Walk through the timeline. JDK 24 (JEP 483): AOT class loading and linking, ~40% improvement. JDK 25 LTS (JEP 514+515): the sweet spot — adds JIT method profiles so the JIT can start optimizing immediately, ~40-55%. JDK 26 (JEP 516): ZGC support — currently you must choose between Leyden and ZGC. Future: pre-compiled native code = 'instant peak performance.' Spring Boot difference: requires explicit -XX:AOTMode=record and -XX:AOTMode=create steps, unlike Quarkus which wraps it in a single property. This gives full control over the training run. Leyden vs GraalVM Native: Leyden stays on the JVM with full reflection support.");
 }
 
 // SLIDE 34 — Leyden Workflow
@@ -546,7 +546,7 @@ divider("B1", "Project Leyden", "JVM AOT Cache — JDK 25 LTS",
       'ENTRYPOINT ["java", "-XX:AOTCache=app.aot", "-jar", "app.jar"]',
     ],
     "~40–55% startup reduction. The more classes your app loads, the bigger the win.", { fontSize: 10 });
-  addNotes(s, "The two -XX:AOTMode steps are the key difference. The record step runs the app and captures a profile. The create step builds the cache. The sleep-and-kill pattern lets the app exercise its auto-configuration, then exit.");
+  addNotes(s, "Walk through the Dockerfile. Stage 1: standard Maven build. Stage 2 (the key part): two JVM invocations. -XX:AOTMode=record runs the app and captures which classes are loaded and which methods are hot into app.aotconf. The sleep-and-kill pattern lets Spring Boot complete auto-configuration then exit. -XX:AOTMode=create builds the AOT cache from the profile. Stage 3: just -XX:AOTCache=app.aot — the JVM skips class loading, linking, and JIT warmup. On JDK 25, Leyden subsumes AppCDS — you don't need both. Result: ~40-55% startup reduction.");
 }
 
 // SLIDE 35 — Demo 04 Recap
@@ -560,7 +560,7 @@ divider("B1", "Project Leyden", "JVM AOT Cache — JDK 25 LTS",
     "~40–55% startup reduction beyond AppCDS baseline",
   ], { fontSize: 16 });
   addCaption(s, "cd demo-04-leyden && ./demo.sh  # JDK 25 required (in container)");
-  addNotes(s, "This is a JDK 25 preview. Unlike Quarkus which has a single property toggle, Spring Boot requires the explicit two-step workflow. Show the 3-stage Dockerfile — the training stage is the key insight.");
+  addNotes(s, "JDK 25 demo using eclipse-temurin:25. Walkthrough: build baseline (no Leyden) and optimized (with AOT cache) images. Compare startup times: baseline ~4-8s, with Leyden ~2-3s = 40-55% reduction. On JDK 25, Leyden subsumes AppCDS — the AOT cache includes everything CDS would cache plus JIT method profiles. If the demo fails (JDK 25 not available): fall back to Dockerfile walkthrough. Common question: 'Will Spring Boot wrap this in a property?' — Likely yes, in a future release. Timing: 3-5 minutes.");
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -589,7 +589,7 @@ divider("B2", "gRPC", "REST vs gRPC inside the cluster",
       "Built-in streaming (4 modes)",
     ], { fontSize: 15 });
   addPerfCallout(s, "Localhost caveat: gRPC unary is SLOWER than REST on localhost — network cost is zero. gRPC wins streaming and high concurrency (c=500).");
-  addNotes(s, "The localhost result is expected. Show it — hiding it would be dishonest. In production with pod-to-pod latency, gRPC wins 3-4x on throughput and 73% on p50 latency. The streaming comparison is real regardless of where you run it.");
+  addNotes(s, "Walk through columns side by side. REST: HTTP/1.1, JSON text ~400 bytes, new connection per request, curl-friendly. gRPC: HTTP/2 always, binary Protobuf ~40 bytes (10x smaller), multiplexed persistent connections, built-in streaming. The callout is critical — be honest: on localhost, gRPC unary is SLOWER because network cost is zero and HTTP/2 has higher setup overhead. The win shows at high concurrency (c=500) and streaming. In production with pod-to-pod latency, gRPC wins 3-4x throughput and 73% P50. Say: 'Use REST for external APIs. Use gRPC for service-to-service inside the cluster.'");
 }
 
 // SLIDE 38 — Spring Boot gRPC
@@ -617,7 +617,7 @@ divider("B2", "gRPC", "REST vs gRPC inside the cluster",
       "spring.grpc.server.port=9000",
     ],
     "New in Spring Boot 4.0. One dependency, one annotation.", { fontSize: 10 });
-  addNotes(s, "Spring Boot 4.0 added first-party gRPC support. The @GrpcService annotation registers the service automatically. Demo 05 runs both REST and gRPC endpoints in the same app.");
+  addNotes(s, "Spring Boot 4.0 added first-party gRPC via spring-grpc. @GrpcService is the gRPC equivalent of @RestController — auto-registers, wires DI, handles lifecycle. Two ports: REST on :8080 (Tomcat), gRPC on :9000 (Netty) in the same JVM, same Spring context. The .proto file is the single source of truth — protobuf-maven-plugin generates stubs. This means the same app serves REST to external clients and gRPC to internal services — best of both worlds.");
 }
 
 // SLIDE 39 — Demo 05 Recap
@@ -632,7 +632,7 @@ divider("B2", "gRPC", "REST vs gRPC inside the cluster",
     "Protobuf wire size vs JSON wire size",
   ], { fontSize: 16 });
   addCaption(s, "cd demo-05-grpc && ./demo.sh");
-  addNotes(s, "On localhost, gRPC unary will be SLOWER than REST because network cost is zero and HTTP/2 has higher setup overhead. Focus the audience on wire size: JSON ~400 bytes vs Protobuf ~40 bytes.");
+  addNotes(s, "Walkthrough: start app with both endpoints. Show REST (curl :8080/metrics = ~400 bytes JSON) and gRPC (grpcurl :9000 = ~40 bytes Protobuf). Run load test: hey for REST, ghz for gRPC with matching params. Key moment: gRPC unary is SLOWER on localhost — show it, don't hide it. Then run at c=500: gRPC wins because HTTP/2 multiplexing handles concurrent requests on one connection. Focus on wire size difference: 10x smaller = 10x less bandwidth in a cluster. Timing: 5-7 minutes.");
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -660,7 +660,7 @@ divider("B3", "Low Latency", "G1GC vs ZGC — side by side",
       "Load barrier overhead: ~5-15%",
       "Smooth CPU profile → no HPA thrash",
     ], { fontSize: 15 });
-  addNotes(s, "Same app, same heap, same Spring Boot config. ZGC will show lower throughput — that's the load barrier cost. The meaningful metric is the GC pause delta.");
+  addNotes(s, "Walk through each column. G1GC: Young GC 10-200ms, Mixed 50-500ms, Full GC 1-10s (catastrophic). Key insight: pauses SCALE with heap size — bigger heap = longer pauses. CPU spikes during GC trigger false HPA scale-out. ZGC Generational: ALL pauses sub-1ms regardless of heap size. Load barrier overhead 5-15% throughput cost — every object reference load goes through a barrier. Smooth CPU = no HPA thrash. Trade-off: G1GC gives max throughput, ZGC gives predictable latency. Say: 'Don't try to tune G1GC to get sub-millisecond pauses. Switch to ZGC.'");
 }
 
 // SLIDE 42 — Demo 06 Recap
@@ -675,7 +675,7 @@ divider("B3", "Low Latency", "G1GC vs ZGC — side by side",
     "G1GC: 50–500ms pauses vs ZGC: <1ms pauses",
   ], { fontSize: 16 });
   addCaption(s, "cd demo-06-latency && ./demo.sh  # starts podman-compose stack");
-  addNotes(s, "This demo makes the GC theory concrete. Two identical apps, same heap, different GC. The key insight: ZGC pauses are sub-millisecond regardless of heap size.");
+  addNotes(s, "Visual proof of the theory. Walkthrough: podman-compose starts two Spring Boot containers (G1GC on :8080, ZGC on :8081) + Prometheus + Grafana. Generate pressure: curl /pressure?mb=50 for each. Key moment 1: GC pause histogram — G1GC shows 50-500ms buckets, ZGC shows sub-1ms. Key moment 2: increase pressure to ?mb=100 — G1GC pauses get LONGER, ZGC stays sub-1ms. Show CPU profile: G1GC has spikes, ZGC is flat. Ask: 'Which one would HPA react to?' Honest throughput caveat: ZGC shows 5-15% lower throughput. Timing: 5-7 minutes.");
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -694,7 +694,7 @@ divider("B4", "Right-Sizing\nCost Analysis", "$80K/year from one cluster, one af
     { code: "+67%", name: "Pod density", purpose: "4 nodes → 2 nodes. Same app, same functionality.", codeColor: "27AE60" },
     { code: "10×", name: "At scale", purpose: "10 clusters = $67,200/year. OpenShift Cost Management tracks it.", codeColor: "27AE60" },
   ], { colW: [1.40, 2.20, 8.49] });
-  addNotes(s, "$80,640/year from one cluster, one afternoon of analysis. That's not a rounding error. The ROI argument: $6,720 saving for ~$400 engineering time = 17x return.");
+  addNotes(s, "This is the 'convince your manager' slide. Walk through four cards: 1) Direct savings: 2 nodes eliminated, $1,120 → $560/month. 2) Engineering cost: ~4 hours × $100/hr = $400 for $6,720 savings = 17x ROI. 3) Indirect: HPA stability, VPA trustworthiness, correct alert thresholds. 4) At scale: 10 clusters = $67,200/year. Tailor to audience — engineers: focus on technical improvements; managers: headline number and ROI; platform teams: multiplication at scale. Say: 'This is an afternoon of configuration changes with measurable dollar impact.'");
 }
 
 // SLIDE 45 — Demo 07 Recap
@@ -709,7 +709,7 @@ divider("B4", "Right-Sizing\nCost Analysis", "$80K/year from one cluster, one af
     "Generates recommendations with confidence intervals",
   ], { fontSize: 16 });
   addCaption(s, "cd demo-07-rightsizing && python3 analyze.py");
-  addNotes(s, "This is the money slide — literally. One afternoon of measurement can save $80K/year per cluster. No containers needed for this demo, just Python.");
+  addNotes(s, "The 'money slide' demo — no containers needed. Walkthrough: python3 analyze.py analyzes 7 workload profiles (API gateways, batch processors, event consumers). Output: current state (4 nodes, over-provisioned), recommended state (specific requests/limits based on P50/P95/P99 usage), after right-sizing (2 nodes, +67% density). Key moment: confidence intervals — data-driven right-sizing, not guessing. Cost: $1,120 → $560/month = $6,720/year per cluster. For 10 clusters: $67,200/year. Common question: 'What about traffic spikes?' — That's what HPA handles. Timing: 3-5 minutes.");
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -737,7 +737,7 @@ divider("B5", "Project Panama", "The end of JNI — Arena-managed native memory"
       "Zero leaks by construction",
       "Java-native stack traces preserved",
     ], { fontSize: 15 });
-  addNotes(s, "The Arena is the key safety feature. Everything allocated in a confined arena is freed when it closes. You cannot leak if you use try-with-resources. allocateFrom() — not allocateArray(). The preview API was renamed at GA.");
+  addNotes(s, "Compare JNI (left) with Panama FFM (right). JNI (1996): three files per native call, manual memory management (leaks kill JVM), JNI crash = no Java stack trace, sun.misc.Unsafe as escape hatch (removed JDK 23). Panama FFM (JDK 22): pure Java, Arena-managed memory — try-with-resources guarantees zero leaks. allocateFrom() not allocateArray() — API was renamed at GA. MethodHandle invocation is type-safe and JIT-inlineable. No --enable-preview required on JDK 22+. This is production-ready.");
 }
 
 // SLIDE 48 — Panama + Spring Boot
@@ -763,7 +763,7 @@ divider("B5", "Project Panama", "The end of JNI — Arena-managed native memory"
       "// 3-Stage: UBI9 C++ → Temurin 25 Java → Temurin 25 JRE",
     ],
     "Panama FFM code is pure JDK API — Spring Boot just wraps it via REST.", { fontSize: 10 });
-  addNotes(s, "The Panama FFM code is identical whether you use Spring Boot or any other framework. The Spring Boot wrapper just exposes it via REST. The 3-stage Dockerfile: UBI9 compiles C++, Temurin 25 builds Java, slim JRE runs both.");
+  addNotes(s, "Panama FFM code is pure JDK API — works identically in any framework. MethodHandle fields are initialized once at bean construction; each request gets its own Arena.ofConfined() for isolation and automatic cleanup. 3-stage Dockerfile: Stage 1 (UBI9) compiles C++ library, Stage 2 (Temurin 25) builds Java, Stage 3 combines both into slim JRE. Container sizing note: native library loads into native memory — if doing heavy native allocation, reduce MaxRAMPercentage to leave room.");
 }
 
 // SLIDE 49 — Demo 08 Recap
@@ -778,7 +778,7 @@ divider("B5", "Project Panama", "The end of JNI — Arena-managed native memory"
     "REST endpoints expose native computation results",
   ], { fontSize: 16 });
   addCaption(s, "cd demo-08-panama && ./demo.sh");
-  addNotes(s, "Panama FFM replaces JNI entirely — no javah, no native headers. Arena-managed memory: allocate, call C++, Arena closes automatically. Show the REST endpoints that expose native computation results.");
+  addNotes(s, "JDK 25 demo. Walkthrough: 3-stage build (C++ compilation → Java build → runtime). Show native C++ stats library (P99, std dev). REST endpoints: curl /panama/stats and /panama/system. Key moment: explain Arena-managed memory — show try-with-resources pattern, ask 'What happens if an exception is thrown?' — Arena still closes, zero leaks by construction. If time allows: show MethodHandle setup via Linker.nativeLinker(). Why it matters: call optimized C/C++ from Java without JNI pain. Timing: 5-7 minutes.");
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -813,7 +813,7 @@ divider("B6", "AI Inference", "LangChain4j + ONNX on the JVM",
       "}",
     ],
     "No Python sidecar. Single deployment unit. CPU inference — no GPU required.", { fontSize: 10 });
-  addNotes(s, "LangChain4j with ONNX Runtime lets you run AI inference on the JVM without a Python sidecar. The MiniLM-L6-v2 model is small enough for CPU inference. Key sizing: the ONNX model loads ~100MB into native memory — drop MaxRAMPercentage to 65%.");
+  addNotes(s, "Left: OnnxEmbeddingModel becomes a Spring bean via @Configuration + @Bean. LangChain4j handles tokenization, ONNX Runtime handles inference. Right: no Python sidecar (single deployment unit), CPU-only inference (~30ms/embed for MiniLM-L6-v2, 22M params), single container/health check/log stream. Critical callout: ONNX model loads ~100MB into native memory OUTSIDE the heap. If using MaxRAMPercentage=75, total = 75% heap + 100MB ONNX + stacks + GC = over limit. Drop to 65%. Connects back to Slide 5 (JVM Memory Regions).");
 }
 
 // SLIDE 52 — Demo 09 Recap
@@ -828,7 +828,7 @@ divider("B6", "AI Inference", "LangChain4j + ONNX on the JVM",
     "Memory-aware container sizing with ONNX model overhead (~100MB native)",
   ], { fontSize: 16 });
   addCaption(s, "cd demo-09-onnx && ./demo.sh");
-  addNotes(s, "The punchline: AI inference as a single Spring Boot deployment unit. ~30ms per embedding on CPU. Practical for semantic search, classification, and RAG retrieval without a separate inference service.");
+  addNotes(s, "Final bonus demo. Walkthrough: app takes longer to start (ONNX model loads ~100MB at init). Show /embed endpoint (POST text → 384-dimensional vector), /similarity (compare two sentences semantically), /benchmark (100 embeddings, ~30ms average). Memory observation: curl /actuator/prometheus | grep jvm_memory — heap is normal but RSS is higher due to ONNX model in native memory. Container sizing: 512MB limit with 75% heap = 384MB + 100MB ONNX = over limit → OOMKill. Solution: reduce to 65% or increase limit. Timing: 3-5 minutes.");
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -860,7 +860,7 @@ divider("B7", "Project Valhalla", "Closing the 30-year gap — value classes",
     { text: "⚡ Cache Performance: Sequential memory. L1/L2 cache-friendly. SIMD-friendly.", sub: true },
     { text: "📅 Timeline: Preview JDK 25+. Universal generics after primitive classes. Stable ~JDK 27-29.", sub: true },
   ], { y: 4.20, h: 2.50, fontSize: 13 });
-  addNotes(s, "A List of Points written today will automatically get better memory layout on a Valhalla JVM if Point is a value class. For Spring Boot apps with large in-memory caches, Valhalla will significantly reduce heap usage and GC pressure.");
+  addNotes(s, "Valhalla is 10+ years in development. Today's record Point: 8-byte header per object, 1M Points = 8MB overhead, GC-tracked, pointer indirection (cache misses). Valhalla value class: no header, inline storage (x0,y0,x1,y1 densely packed), GC never sees it, cache-friendly sequential access. Four impacts: Memory (List<double> 1x vs List<Double> 3x, pod requests cut 50%), GC Pressure (zero heap allocation from value types), Cache Performance (SIMD-friendly layout), Timeline (preview JDK 25+, stable ~JDK 27-29). Say: 'Change record to value class for your data types, and the JVM does the rest.'");
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -894,7 +894,7 @@ divider("B8", "Anti-Patterns\n& Remediation", "Common JVM anti-patterns on Kuber
       { text: "❌ Missing Actuator Prometheus endpoint", sub: true },
       { text: "❌ Tuning JVM flags without baseline", sub: true },
     ], { fontSize: 13 });
-  addNotes(s, "The Spring Boot-specific anti-patterns: not using spring.context.exit=onRefresh means you miss half the classes. Not enabling Actuator/Prometheus means you're flying blind.");
+  addNotes(s, "Audit checklist — walk through each quadrant, ask for show of hands. Memory: hardcoded -Xmx (60%+ of rooms), MaxRAMPercentage=90 (starves off-heap), no MaxMetaspaceSize (unbounded growth). GC & CPU: default ParallelGCThreads (64 threads for 2 CPU limit), CPU-based HPA (GC = false signals), minReplicas:1 (GC pause = downtime), no stabilizationWindow (oscillation). Startup: no spring.context.exit=onRefresh (miss half the classes), missing -Xshare:on (silent fallback), wrong JDK version (archive ignored). Observability: no GC histogram, no Actuator endpoint, no alerting, tuning without baseline.");
 }
 
 // SLIDE 57 — Anti-Pattern Remediation
@@ -922,7 +922,7 @@ divider("B8", "Anti-Patterns\n& Remediation", "Common JVM anti-patterns on Kuber
       { text: "→ management.endpoints.web.exposure.include=prometheus", sub: true },
       { text: "→ Baseline first. Change one flag. Measure again.", sub: true },
     ], { fontSize: 13 });
-  addNotes(s, "Everything on this slide is a drop-in change. No application code. No architectural redesign. Configuration and build pipeline changes only. The golden rule: one change at a time, measure before and after.");
+  addNotes(s, "Mirror of anti-patterns — same quadrants, now with fixes. Memory: UseContainerSupport + MaxRAMPercentage=75.0 (30 seconds), 75% not 90% (25% headroom for Metaspace/stacks/native), MaxMetaspaceSize=256m. GC: ParallelGCThreads=N (= CPU request), HPA on RPS via KEDA, minReplicas:2, stabilizationWindowSeconds:120. Startup: spring.context.exit=onRefresh for training, -Xshare:on (not auto — fail if archive missing), pin JDK minor version. Observability: percentiles-histogram, endpoints.web.exposure, PrometheusRule for GC P99 >500ms. Say: 'Take a photo of this slide. It's your Monday morning checklist.' Golden rule: one change at a time, measure before and after.");
 }
 
 // ═══════════════════════════════════════════════════════════════════════

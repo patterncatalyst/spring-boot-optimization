@@ -399,7 +399,7 @@ JAVA_OPTS="-XX:+UseG1GC \
   -XX:MaxMetaspaceSize=256m \
   -XX:NativeMemoryTracking=summary"
 
-# Dockerfile ENTRYPOINT
+# Containerfile ENTRYPOINT
 ENTRYPOINT ["sh", "-c",
   "java $JAVA_OPTS -jar app.jar"]</code></pre>
     </div>
@@ -414,7 +414,7 @@ ENTRYPOINT ["sh", "-c",
     - ZGC needs NO tuning: just enable it. That's the entire configuration.
 
     Right column — Spring Boot JAVA_OPTS Pattern:
-    - The key insight is the Dockerfile ENTRYPOINT pattern: java $JAVA_OPTS -jar app.jar. This reads JAVA_OPTS from the environment, which lets you override JVM flags at deploy time via Kubernetes env vars — no image rebuild needed.
+    - The key insight is the Containerfile ENTRYPOINT pattern: java $JAVA_OPTS -jar app.jar. This reads JAVA_OPTS from the environment, which lets you override JVM flags at deploy time via Kubernetes env vars — no image rebuild needed.
     - In the deployment YAML, set the JAVA_OPTS env var with all your flags. Different environments (staging vs production) can use different flags from the same image.
     - NativeMemoryTracking=summary: enable this in staging to measure actual memory breakdown. Small overhead (~5%), but invaluable for right-sizing.
 
@@ -462,7 +462,7 @@ spring.context.exit=onRefresh</code></pre>
     - Total: 4-8 seconds baseline for a typical Spring Boot microservice.
 
     Right column — AppCDS Fix:
-    - 3-stage Dockerfile: builder (compile) → trainer (dump CDS archive) → runtime (use archive).
+    - 3-stage Containerfile: builder (compile) → trainer (dump CDS archive) → runtime (use archive).
     - spring.context.exit=onRefresh: this critical property tells Spring Boot to exit after the ApplicationContext refreshes. It ensures the training run loads ALL classes — without it, you miss the classes loaded during actual request handling.
     - Result: 35-55% startup reduction. This is MUCH bigger than what build-time frameworks see from CDS (~5%) because Spring Boot loads far more classes at runtime.
 
@@ -720,7 +720,7 @@ management.metrics.tags.application=\
       <thead><tr><th>Change</th><th>Impact</th><th>Time</th></tr></thead>
       <tbody>
         <tr><td>MaxRAMPercentage=75 + right-size</td><td style="color:#27AE60;">40-60% memory savings</td><td>30 min</td></tr>
-        <tr><td>AppCDS multi-stage Dockerfile</td><td style="color:#27AE60;">35-55% faster startup</td><td>2 hrs</td></tr>
+        <tr><td>AppCDS multi-stage Containerfile</td><td style="color:#27AE60;">35-55% faster startup</td><td>2 hrs</td></tr>
         <tr><td>ParallelGCThreads = CPU limit</td><td style="color:#27AE60;">30-50% shorter GC pauses</td><td>5 min</td></tr>
         <tr><td>spring.threads.virtual.enabled=true</td><td style="color:#27AE60;">50% thread stack savings</td><td>1 min</td></tr>
         <tr><td>HPA on RPS, not CPU</td><td style="color:#27AE60;">Eliminates GC-induced thrash</td><td>1 hr</td></tr>
@@ -736,7 +736,7 @@ management.metrics.tags.application=\
 
     Row 1 — MaxRAMPercentage=75 + right-size (30 min): the highest-impact, lowest-effort change. Add the JVM flag to your JAVA_OPTS env var, adjust container resources.requests and resources.limits based on actual RSS measurements. 40-60% memory savings.
 
-    Row 2 — AppCDS multi-stage Dockerfile (2 hrs): the longest task because it requires restructuring the Dockerfile into 3 stages. But it's still a Dockerfile change — zero application code modifications. 35-55% faster startup, and the improvement compounds with more dependencies.
+    Row 2 — AppCDS multi-stage Containerfile (2 hrs): the longest task because it requires restructuring the Containerfile into 3 stages. But it's still a Containerfile change — zero application code modifications. 35-55% faster startup, and the improvement compounds with more dependencies.
 
     Row 3 — ParallelGCThreads = CPU limit (5 min): add one JVM flag. Literally the fastest fix in the talk. 30-50% shorter GC pauses.
 
@@ -844,7 +844,7 @@ management.metrics.tags.application=\
     Demo walkthrough:
     1. cd demo-03-appcds && ./demo.sh
     2. The script builds two images: baseline (no CDS) and optimized (with AppCDS archive).
-    3. Show the Dockerfile: point out the 3 stages — builder, CDS trainer, runtime. The trainer stage uses spring.context.exit=onRefresh to capture the full class list, then dumps the CDS archive.
+    3. Show the Containerfile: point out the 3 stages — builder, CDS trainer, runtime. The trainer stage uses spring.context.exit=onRefresh to capture the full class list, then dumps the CDS archive.
     4. Run both containers. The output prints startup time for each.
     5. Key moment: the side-by-side comparison. Baseline ~4-8 seconds, with AppCDS ~2-4 seconds. That's 35-55% reduction with zero code changes.
     6. Explain why Spring Boot benefits more than build-time frameworks: Spring Boot loads 10,000-15,000 classes at startup (classpath scanning, auto-configuration, conditional evaluation). Build-time frameworks resolve most of this during compilation, so they only load 3,000-5,000 classes at runtime. More classes = more CDS benefit.
@@ -866,7 +866,7 @@ management.metrics.tags.application=\
     <li><strong style="color:#ECF0F1;">Always enable UseContainerSupport + MaxRAMPercentage</strong> — hardcoded -Xmx is a container anti-pattern</li>
     <li><strong style="color:#ECF0F1;">Right-size first, then tune</strong> — measure RSS + off-heap before setting requests/limits</li>
     <li><strong style="color:#ECF0F1;">Match GC to workload</strong> — G1GC general, ZGC/Shenandoah for latency-sensitive APIs</li>
-    <li><strong style="color:#ECF0F1;">Spring Boot + AppCDS = 35–55% faster startup</strong> — 3-stage Dockerfile, zero code changes</li>
+    <li><strong style="color:#ECF0F1;">Spring Boot + AppCDS = 35–55% faster startup</strong> — 3-stage Containerfile, zero code changes</li>
     <li><strong style="color:#ECF0F1;">Observe before you tune</strong> — JFR + Cryostat + Actuator/Prometheus validates every change</li>
     <li><strong style="color:#ECF0F1;">Autoscale on RPS not CPU</strong> — GC pauses lie to HPA. Enable virtual threads.</li>
     <li><strong style="color:#ECF0F1;">Quantify savings</strong> — track cost per namespace to show business value from engineering work</li>
@@ -877,7 +877,7 @@ management.metrics.tags.application=\
     1. UseContainerSupport + MaxRAMPercentage: "How many of you are using hardcoded -Xmx today? That's the first thing to fix Monday morning."
     2. Right-size first, then tune: "Measure RSS + off-heap with jcmd VM.native_memory before touching any JVM flags."
     3. Match GC to workload: "G1GC is fine for most things. If your P99 pause exceeds 500ms, switch to ZGC or Shenandoah. Don't try to tune G1GC to get there."
-    4. AppCDS = 35-55% faster startup: "This is a Dockerfile change. Zero code modifications. The more dependencies your Spring Boot app has, the bigger the win."
+    4. AppCDS = 35-55% faster startup: "This is a Containerfile change. Zero code modifications. The more dependencies your Spring Boot app has, the bigger the win."
     5. Observe before you tune: "JFR, Cryostat, Actuator, Prometheus — pick your stack, but always have a baseline before making changes."
     6. Autoscale on RPS not CPU: "GC pauses lie to HPA. Scale on requests per second. Enable virtual threads to reduce thread stack memory."
     7. Quantify savings: "Track cost per namespace before and after. Show your manager the dollar number, not the technical improvement."
@@ -956,11 +956,11 @@ management.metrics.tags.application=\
 
     Future: pre-compiled native code in the cache. The training run JIT-compiles hot methods and stores the native code in the cache. At startup, the JVM loads pre-compiled native code instead of interpreting → JIT-compiling. This is "instant peak performance" — no warmup period.
 
-    The callout explains the Spring Boot difference: unlike Quarkus (which wraps Leyden in quarkus.package.jar.aot.enabled=true), Spring Boot requires explicit -XX:AOTMode=record and -XX:AOTMode=create steps. That's more Dockerfile work but gives you full control over the training run.
+    The callout explains the Spring Boot difference: unlike Quarkus (which wraps Leyden in quarkus.package.jar.aot.enabled=true), Spring Boot requires explicit -XX:AOTMode=record and -XX:AOTMode=create steps. That's more Containerfile work but gives you full control over the training run.
 
     Leyden vs GraalVM Native: Leyden stays on the JVM — full reflection, dynamic loading, JIT compilation, all continue to work. GraalVM Native is the closed-world AOT option where you give up dynamic features for instant startup. Different trade-offs for different use cases.
 
-    Transition: "Let me show you the exact Dockerfile workflow."
+    Transition: "Let me show you the exact Containerfile workflow."
   </aside>
 </section>
 
@@ -970,8 +970,8 @@ management.metrics.tags.application=\
   <div style="font-size:0.58em;">
     <div class="cols">
       <div>
-        <h4>3-Stage Dockerfile</h4>
-        <pre><code class="language-dockerfile"># Stage 1: Build
+        <h4>3-Stage Containerfile</h4>
+        <pre><code class="language-containerfile"># Stage 1: Build
 FROM eclipse-temurin:25 AS compiler
 WORKDIR /build
 COPY pom.xml .
@@ -1011,12 +1011,12 @@ ENTRYPOINT ["java", "-XX:AOTCache=app.aot",
   </div>
   <img src="{{ '/diagrams/05-spring-boot-leyden-flow.svg' | relative_url }}" alt="Spring Boot Leyden Flow: compile → train → runtime" style="max-height:160px;margin:0.3em auto;display:block;">
   <aside class="notes">
-    Walk through the Dockerfile left column, then the explanation right column.
+    Walk through the Containerfile left column, then the explanation right column.
 
     Stage 1 — Compile: standard Maven build, nothing special. Same as any multi-stage Docker build.
 
     Stage 2 — Train (the interesting part): two separate JVM invocations.
-    - First: -XX:AOTMode=record runs the app and captures which classes are loaded and which methods are hot into app.aotconf. The "sleep 15 && kill" pattern lets Spring Boot complete its auto-configuration, exercise bean creation, and then exit. In production Dockerfiles, you'd poll a health check endpoint instead of sleeping.
+    - First: -XX:AOTMode=record runs the app and captures which classes are loaded and which methods are hot into app.aotconf. The "sleep 15 && kill" pattern lets Spring Boot complete its auto-configuration, exercise bean creation, and then exit. In production Containerfiles, you'd poll a health check endpoint instead of sleeping.
     - Second: -XX:AOTMode=create reads the recorded profile and builds the AOT cache (app.aot). This step pre-compiles hot methods, pre-links classes, and stores everything in a single cache file.
 
     Stage 3 — Runtime: just -XX:AOTCache=app.aot. The JVM reads the cache and skips class loading, linking, and JIT warmup for everything that was recorded.
@@ -1050,13 +1050,13 @@ ENTRYPOINT ["java", "-XX:AOTCache=app.aot",
     Demo walkthrough:
     1. cd demo-04-leyden && ./demo.sh
     2. The script builds two images: baseline (no Leyden cache) and optimized (with AOT cache).
-    3. Show the Dockerfile and walk through the three stages — the training stage (record + create) is the key insight.
+    3. Show the Containerfile and walk through the three stages — the training stage (record + create) is the key insight.
     4. Run both containers. Compare startup times side by side.
     5. Key moment: show the timing difference. Baseline ~4-8s, with Leyden ~2-3s. That's 40-55% reduction — similar to AppCDS but with richer caching (method profiles, linking decisions).
 
     Important distinction: on JDK 25, Leyden subsumes AppCDS. The AOT cache includes everything CDS would cache plus JIT method profiles. You don't need both — Leyden replaces AppCDS.
 
-    If the demo fails (JDK 25 not available): fall back to the Dockerfile walkthrough. The concept is clear from the code. The audience needs to understand the record → create → runtime workflow, not see the timing numbers live.
+    If the demo fails (JDK 25 not available): fall back to the Containerfile walkthrough. The concept is clear from the code. The audience needs to understand the record → create → runtime workflow, not see the timing numbers live.
 
     Common question: "Will Spring Boot wrap this in a property like Quarkus does?" Answer: likely yes, in a future release. Spring Boot's AOT support is evolving. For now, the explicit flags give you full control.
 
@@ -1483,7 +1483,7 @@ public class PanamaController {
     </div>
     <div>
       <h4>3-Stage Build</h4>
-      <pre><code class="language-dockerfile"># Stage 1: Compile C++ (UBI9)
+      <pre><code class="language-containerfile"># Stage 1: Compile C++ (UBI9)
 FROM ubi9 AS cpp-builder
 RUN dnf install -y gcc-c++ cmake
 COPY native/ /build/native/
@@ -1502,7 +1502,7 @@ ENTRYPOINT ["java", "-jar", "app.jar"]</code></pre>
     </div>
   </div>
   <aside class="notes">
-    Walk through the left column (Spring Boot controller) then the right (Dockerfile).
+    Walk through the left column (Spring Boot controller) then the right (Containerfile).
 
     Left — Spring MVC Controller:
     - The Panama FFM code is pure JDK API — no framework-specific abstraction. It works identically in Spring Boot, Quarkus, Micronaut, or plain Java. Spring Boot just provides the @RestController wrapper.
@@ -1510,12 +1510,12 @@ ENTRYPOINT ["java", "-jar", "app.jar"]</code></pre>
     - Each request gets its own Arena.ofConfined(). This means each request's native memory is isolated and freed when the request completes. No shared state, no leaks, no concurrency issues.
     - The result MemorySegment is read with result.get(JAVA_DOUBLE, 0) — typed access, no casting, no pointer arithmetic.
 
-    Right — 3-Stage Dockerfile:
+    Right — 3-Stage Containerfile:
     - Stage 1 (UBI9): compiles the C++ library. UBI9 provides gcc-c++ and cmake. The output is a shared library (libjvmstats.so).
     - Stage 2 (Temurin 25): builds the Java app. Standard Maven build.
     - Stage 3 (Temurin 25 JRE): copies both the .so from Stage 1 and the .jar from Stage 2. Minimal runtime image.
 
-    This is a common pattern for Panama FFM apps: the C/C++ compilation happens in the container build, not on the developer's machine. Developers write Java code and the Dockerfile handles cross-compilation.
+    This is a common pattern for Panama FFM apps: the C/C++ compilation happens in the container build, not on the developer's machine. Developers write Java code and the Containerfile handles cross-compilation.
 
     Container sizing note: the native library loads into native memory. If you're doing heavy native memory allocation (large arrays, many concurrent requests), reduce MaxRAMPercentage to leave room.
 
@@ -1556,7 +1556,7 @@ ENTRYPOINT ["java", "-jar", "app.jar"]</code></pre>
 
     Timing: 5-7 minutes. The build takes longer because of C++ compilation.
 
-    If the build fails (missing gcc-c++ in UBI9): the demo Dockerfile installs it via dnf. If there's a network issue pulling UBI9, fall back to the code walkthrough.
+    If the build fails (missing gcc-c++ in UBI9): the demo Containerfile installs it via dnf. If there's a network issue pulling UBI9, fall back to the code walkthrough.
 
     Transition: "Next up: AI inference without a Python sidecar."
   </aside>
@@ -1775,7 +1775,7 @@ value class Point {
     This is the "audit checklist" slide. Walk through each quadrant and ask for a show of hands.
 
     Memory (top-left):
-    - Hardcoded -Xmx/-Xms: "How many of you have -Xmx512m hardcoded in a Dockerfile right now?" Usually 60%+ of the room. This ignores container limits entirely.
+    - Hardcoded -Xmx/-Xms: "How many of you have -Xmx512m hardcoded in a Containerfile right now?" Usually 60%+ of the room. This ignores container limits entirely.
     - MaxRAMPercentage=90: slightly better — at least it's proportional — but 90% starves off-heap (Metaspace, thread stacks, native memory, GC bookkeeping). The OOMKill happens outside the heap and the JVM doesn't know why.
     - No MaxMetaspaceSize: Metaspace grows unbounded. In Spring Boot apps with many auto-configuration classes, this can silently consume 200-300MB.
 
@@ -1826,8 +1826,8 @@ value class Point {
       <ul style="color:#90A4AE;line-height:1.6;margin-left:1em;">
         <li>→ Add <code>spring.context.exit=onRefresh</code> for training</li>
         <li>→ Always <code>-Xshare:on</code> in ENTRYPOINT (fail if archive missing)</li>
-        <li>→ Pin JDK minor version in Dockerfile FROM</li>
-        <li>→ Use 3-stage Dockerfile for AppCDS (Demo 03)</li>
+        <li>→ Pin JDK minor version in Containerfile FROM</li>
+        <li>→ Use 3-stage Containerfile for AppCDS (Demo 03)</li>
       </ul>
     </div>
     <div>
@@ -1844,7 +1844,7 @@ value class Point {
     This slide mirrors the previous anti-patterns slide — same four quadrants, but now with the fixes. Every fix is a drop-in change.
 
     Memory Fixes (top-left):
-    - UseContainerSupport + MaxRAMPercentage=75.0: the single most impactful flag combination in this entire talk. Add it to JAVA_OPTS or JAVA_TOOL_OPTIONS in your Dockerfile. 30 seconds.
+    - UseContainerSupport + MaxRAMPercentage=75.0: the single most impactful flag combination in this entire talk. Add it to JAVA_OPTS or JAVA_TOOL_OPTIONS in your Containerfile. 30 seconds.
     - 75%, not 90%: the 25% headroom covers Metaspace (~150-250MB for Spring Boot), thread stacks (~1MB per platform thread × 200 default Tomcat threads), direct ByteBuffers, GC bookkeeping, and the JVM's own native memory.
     - MaxMetaspaceSize=256m: puts a ceiling on Metaspace growth. If your app exceeds this, you get an OutOfMemoryError with a clear message instead of a silent OOMKill.
 

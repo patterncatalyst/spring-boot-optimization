@@ -147,7 +147,7 @@ def diagram_03():
         nodes=[
             {"x": 40,  "y": 120, "w": 170, "h": 80, "style": "box",    "lines": ["CDS", "Class Data Sharing", "JDK base classes only"]},
             {"x": 250, "y": 120, "w": 190, "h": 80, "style": "green",  "lines": ["AppCDS", "Application CDS", "All classes + app classes"]},
-            {"x": 480, "y": 120, "w": 190, "h": 80, "style": "accent", "lines": ["Spring Boot + AppCDS", "35-55% startup gain", "3-stage Dockerfile"]},
+            {"x": 480, "y": 120, "w": 190, "h": 80, "style": "accent", "lines": ["Spring Boot + AppCDS", "35-55% startup gain", "3-stage Containerfile"]},
             {"x": 40,  "y": 260, "w": 190, "h": 80, "style": "purple", "lines": ["Leyden (JDK 24)", "AOT class loading", "~40% startup reduction"]},
             {"x": 280, "y": 260, "w": 210, "h": 80, "style": "purple", "lines": ["Leyden (JDK 25 LTS)", "Method profiles + ergonomics", "~40-55% startup reduction"]},
             {"x": 540, "y": 260, "w": 190, "h": 80, "style": "ghost",  "lines": ["Leyden (JDK 26+)", "ZGC support", "Pre-compiled native code"]},
@@ -259,7 +259,7 @@ def diagram_06():
             {"x": 470, "y": 185, "w": 370, "h": 50, "style": "green", "lines": ["75% + MaxMetaspaceSize=256m", "Reserve 25% for off-heap regions"]},
             {"x": 470, "y": 250, "w": 370, "h": 50, "style": "green", "lines": ["ParallelGCThreads = CPU request", "Match GC threads to available CPUs"]},
             {"x": 470, "y": 315, "w": 370, "h": 50, "style": "green", "lines": ["HPA on RPS, not CPU", "KEDA or Prometheus Adapter"]},
-            {"x": 470, "y": 380, "w": 370, "h": 50, "style": "green", "lines": ["3-stage AppCDS Dockerfile", "35-55% startup reduction, zero code changes"]},
+            {"x": 470, "y": 380, "w": 370, "h": 50, "style": "green", "lines": ["3-stage AppCDS Containerfile", "35-55% startup reduction, zero code changes"]},
         ],
         edges=[
             {"x1": 410, "y1": 145, "x2": 470, "y2": 145, "amber": True},

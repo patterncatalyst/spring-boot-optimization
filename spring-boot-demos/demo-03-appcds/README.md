@@ -57,17 +57,17 @@ chmod +x demo.sh
 cd app
 
 # Build baseline (no AppCDS)
-podman build -f Dockerfile.baseline -t startup-demo:baseline .
+podman build -f Containerfile.baseline -t startup-demo:baseline .
 
 # Build with AppCDS (3-stage: build -> CDS training -> runtime)
-podman build -f Dockerfile.appcds -t startup-demo:appcds .
+podman build -f Containerfile.appcds -t startup-demo:appcds .
 
 # Compare manually
 time podman run --rm --memory=512m startup-demo:baseline 2>&1 | grep "Started"
 time podman run --rm --memory=512m startup-demo:appcds   2>&1 | grep "Started"
 ```
 
-## How the AppCDS Dockerfile Works
+## How the AppCDS Containerfile Works
 
 ```
 Stage 1 (builder):     mvn package -> app.jar
@@ -94,7 +94,7 @@ JDK (not just the JRE), but the final runtime image uses the smaller
 
 ## Extending to Your Application
 
-1. Add the training stage to your Dockerfile (copy Stage 2 from `Dockerfile.appcds`)
+1. Add the training stage to your Containerfile (copy Stage 2 from `Containerfile.appcds`)
 2. Adjust the `-Dspring.context.exit=onRefresh` to match your framework
 3. For Quarkus: uses its own AOT -- AppCDS less needed (~5% improvement)
 4. For Micronaut: similar approach, or use `-Dmicronaut.server.netty.worker-threads=0`

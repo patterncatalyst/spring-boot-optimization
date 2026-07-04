@@ -41,7 +41,7 @@ java -XX:AOTMode=create -XX:AOTConfiguration=app.aotconf \
 java -XX:AOTCache=app.aot -jar app.jar
 ```
 
-## Three-stage Dockerfile
+## Three-stage Containerfile
 
 | Stage | Image | Purpose |
 |-------|-------|---------|

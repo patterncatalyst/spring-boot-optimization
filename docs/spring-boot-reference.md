@@ -33,7 +33,7 @@ description: "Full configuration reference for Spring Boot 4.0.5 on OpenShift an
       </p>
     </div>
     <div class="card" style="pointer-events:none;">
-      <h3 style="color:var(--teal);">Multi-Stage Dockerfile Pattern</h3>
+      <h3 style="color:var(--teal);">Multi-Stage Containerfile Pattern</h3>
       <pre style="font-size:.75rem;margin-top:.5rem;"><code>FROM maven:3.9-eclipse-temurin-21 AS builder
 WORKDIR /app
 COPY . .
@@ -130,7 +130,7 @@ ENTRYPOINT ["java",
       <h3 style="color:var(--teal);">AppCDS (35-55% improvement)</h3>
       <p style="color:var(--muted);font-size:.875rem;line-height:1.6;">
         Spring Boot benefits dramatically from AppCDS because it loads 8,000-12,000 classes at startup.
-        Uses a 3-stage Dockerfile: build, train (<code>-XX:ArchiveClassesAtExit</code>),
+        Uses a 3-stage Containerfile: build, train (<code>-XX:ArchiveClassesAtExit</code>),
         run (<code>-XX:SharedArchiveFile</code>).
       </p>
     </div>

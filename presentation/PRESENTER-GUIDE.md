@@ -152,7 +152,7 @@
 
 **Critical for the audience:**
 > "ParallelGCThreads is the most commonly missed flag.
-> The JAVA_OPTS pattern in the Dockerfile ENTRYPOINT lets you override at deploy time
+> The JAVA_OPTS pattern in the Containerfile ENTRYPOINT lets you override at deploy time
 > via Kubernetes env vars without rebuilding the image."
 
 **Spring Boot specific:**
@@ -243,7 +243,7 @@
 
 **Walk through the table:**
 > "Every row is a configuration change — not an architectural rewrite.
-> The virtual threads change is one property. The AppCDS change is a Dockerfile rebuild.
+> The virtual threads change is one property. The AppCDS change is a Containerfile rebuild.
 > Total estimated effort: about 4 hours per microservice."
 
 ---
@@ -278,7 +278,7 @@
 
 **If running live:**
 > Run `./demo.sh` in demo-03-appcds. Compare the startup time with and without CDS.
-> Point out the 35-55% improvement and the 3-stage Dockerfile pattern.
+> Point out the 35-55% improvement and the 3-stage Containerfile pattern.
 
 **Emphasis:**
 > "The more classes your app loads at startup, the bigger the CDS win. Spring Boot's
@@ -329,7 +329,7 @@ Each bonus section has its own demo.
 - JDK 25 LTS adds method profiles and ergonomics
 - Spring Boot requires explicit -XX:AOTMode steps (unlike frameworks with single-property support)
 
-**Walk through the 3-stage Dockerfile:**
+**Walk through the 3-stage Containerfile:**
 > "Stage 1 builds. Stage 2 records a profile and creates the AOT cache. Stage 3 runs
 > with -XX:AOTCache. The sleep-and-kill pattern in training lets Spring Boot
 > exercise its auto-configuration."
@@ -385,7 +385,7 @@ watch the GC pause histograms diverge.
 **Key messages:**
 - Panama FFM replaces JNI — safe, leak-free native memory
 - Arena-based memory management — zero leaks by construction
-- 3-stage Dockerfile: C++ on UBI9, Java on Temurin 25, runtime on Temurin 25 JRE
+- 3-stage Containerfile: C++ on UBI9, Java on Temurin 25, runtime on Temurin 25 JRE
 
 **Demo 08:** Run `./demo.sh` in demo-08-panama. Call the /panama/stats endpoint.
 

@@ -34,7 +34,7 @@ EOF
 echo -e "${YELLOW}Step 1: Building images (JDK 25 inside Docker)...${RESET}"
 
 echo -e "  Building ${RED}BASELINE${RESET} (JDK 25, no AOT cache)..."
-if ! podman build --no-cache -f app/Dockerfile.baseline \
+if ! podman build --no-cache -f app/Containerfile.baseline \
         -t springboot-leyden:baseline ./app; then
     echo -e "${RED}Baseline build failed${RESET}"; exit 1
 fi
@@ -42,7 +42,7 @@ fi
 echo
 echo -e "  Building ${GREEN}LEYDEN${RESET} (JDK 25 + AOT cache)..."
 echo -e "  ${YELLOW}Training run included -- records + creates app.aot (~45s)${RESET}"
-if ! podman build --no-cache -f app/Dockerfile.leyden \
+if ! podman build --no-cache -f app/Containerfile.leyden \
         -t springboot-leyden:leyden ./app; then
     echo -e "${RED}Leyden build failed${RESET}"; exit 1
 fi

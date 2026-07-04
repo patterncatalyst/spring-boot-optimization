@@ -30,7 +30,7 @@ run inside the container — nothing needs to be installed locally.
 └──────────────────────────────────────────────────────┘
 ```
 
-### Three-stage Dockerfile
+### Three-stage Containerfile
 
 ```
 Stage 1: ubi9 base + gcc-c++ + cmake
@@ -58,7 +58,7 @@ with the other Spring Boot demos.
 ```
 demo-08-panama/
 ├── demo.sh                          ← Run this
-├── Dockerfile                       ← Three-stage build
+├── Containerfile                    ← Three-stage build
 │
 ├── native/
 │   ├── CMakeLists.txt               ← cmake build config

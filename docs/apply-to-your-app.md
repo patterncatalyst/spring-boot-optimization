@@ -30,9 +30,9 @@ description: How to bring these JVM optimizations to your existing Spring Boot a
 
   <p>This is the single most impactful change. If you do nothing else, do this.</p>
 
-  <h3>In your Dockerfile</h3>
+  <h3>In your Containerfile</h3>
   <div class="run-box">
-    <div class="run-box-header">Dockerfile ENTRYPOINT</div>
+    <div class="run-box-header">Containerfile ENTRYPOINT</div>
     <pre><code>ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]</code></pre>
   </div>
 
@@ -138,10 +138,10 @@ management.metrics.tags.application=${spring.application.name}</code></pre>
     Step 5: Add AppCDS (2 hours)
   </h2>
 
-  <p>Convert your Dockerfile from a 1-stage or 2-stage build to a 3-stage build:</p>
+  <p>Convert your Containerfile from a 1-stage or 2-stage build to a 3-stage build:</p>
 
   <div class="run-box">
-    <div class="run-box-header">Dockerfile (3-stage AppCDS pattern)</div>
+    <div class="run-box-header">Containerfile (3-stage AppCDS pattern)</div>
     <pre><code># Stage 1: Build
 FROM registry.access.redhat.com/ubi9/openjdk-21 AS builder
 WORKDIR /build
@@ -225,7 +225,7 @@ ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -Xshare:on \
       <tr><td>ParallelGCThreads = CPU limit</td><td>5 min</td><td>30-50% shorter GC pauses</td><td>No</td></tr>
       <tr><td>spring.threads.virtual.enabled</td><td>1 min</td><td>50% thread stack savings</td><td>No</td></tr>
       <tr><td>Actuator + Micrometer</td><td>30 min</td><td>Full JVM observability</td><td>2 deps + 3 lines</td></tr>
-      <tr><td>AppCDS 3-stage Dockerfile</td><td>2 hrs</td><td>35-55% faster startup</td><td>No</td></tr>
+      <tr><td>AppCDS 3-stage Containerfile</td><td>2 hrs</td><td>35-55% faster startup</td><td>No</td></tr>
       <tr><td>Right-size resources</td><td>1 hr</td><td>40-60% memory savings</td><td>No</td></tr>
       <tr><td>HPA on RPS</td><td>30 min</td><td>Eliminates GC thrash</td><td>No</td></tr>
     </tbody>

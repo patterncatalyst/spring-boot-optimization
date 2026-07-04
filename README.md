@@ -106,7 +106,7 @@ The complete talk from container heap sizing through Project Leyden. Structured 
 | 1-5 | Container-aware JVM heap — the `UseContainerSupport` story |
 | 6-12 | GC monitoring — Micrometer, Prometheus, Grafana, HPA interaction |
 | 13-16 | AppCDS — what it caches, Spring Boot vs Quarkus, honest results |
-| 17-22 | Project Leyden — AOT cache, training workload, 3-stage Dockerfile |
+| 17-22 | Project Leyden — AOT cache, training workload, 3-stage Containerfile |
 | 23-26 | REST vs gRPC — wire format, streaming, honest localhost results |
 | 27-32 | Bonus: JVM anti-patterns + remediation, gRPC protocol deep dive |
 

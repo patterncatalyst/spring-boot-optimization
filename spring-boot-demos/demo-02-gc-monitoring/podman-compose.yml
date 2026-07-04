@@ -17,7 +17,7 @@ services:
   java-app-g1gc:
     build:
       context: ./app
-      dockerfile: Dockerfile
+      dockerfile: Containerfile
     container_name: java-app-g1gc
     ports:
       - "8080:8080"
@@ -48,7 +48,7 @@ services:
   java-app-zgc:
     build:
       context: ./app
-      dockerfile: Dockerfile
+      dockerfile: Containerfile
     container_name: java-app-zgc
     ports:
       - "8081:8080"

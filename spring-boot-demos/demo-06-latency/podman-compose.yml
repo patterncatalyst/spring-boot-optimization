@@ -15,7 +15,7 @@ services:
   app-g1gc:
     build:
       context: ./app
-      dockerfile: Dockerfile
+      dockerfile: Containerfile
     image: sb-latency:g1gc
     container_name: latency-g1gc
     ports:
@@ -30,7 +30,7 @@ services:
   app-zgc:
     build:
       context: ./app
-      dockerfile: Dockerfile
+      dockerfile: Containerfile
     image: sb-latency:zgc
     container_name: latency-zgc
     ports:

@@ -170,7 +170,7 @@ SSE or WebSocket boilerplate.
 | `app/src/main/java/demo/grpc/MetricsController.java` | REST implementation (`@RestController`) |
 | `app/src/main/java/demo/grpc/GrpcDemoApp.java` | `@SpringBootApplication` entry point |
 | `app/src/main/resources/application.properties` | gRPC port 9000, REST port 8080 |
-| `app/Dockerfile` | UBI multi-stage build, exposes both ports |
+| `app/Containerfile` | UBI multi-stage build, exposes both ports |
 | `demo.sh` | Full demo with load testing and streaming |
 
 ---

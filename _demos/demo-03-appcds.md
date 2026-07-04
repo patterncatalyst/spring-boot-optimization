@@ -20,7 +20,7 @@ Spring Boot's fat JAR classpath typically contains 8,000-12,000 classes loaded a
 
 Quarkus moves most of this work to build time, which is why AppCDS only gives ~5% there. For Spring Boot, AppCDS addresses the largest remaining startup bottleneck.
 
-## Three-stage Dockerfile
+## Three-stage Containerfile
 
 | Stage | Purpose |
 |-------|---------|
@@ -28,7 +28,7 @@ Quarkus moves most of this work to build time, which is why AppCDS only gives ~5
 | trainer | Run the app once with `-XX:ArchiveClassesAtExit` to dump the class list |
 | runtime | Run with `-XX:SharedArchiveFile` to load the cached classes |
 
-```dockerfile
+```containerfile
 # Stage 2: Training run — creates the AppCDS archive
 FROM ubi9/openjdk-21-runtime AS trainer
 COPY --from=builder /app/target/*.jar app.jar

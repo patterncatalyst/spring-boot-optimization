@@ -40,7 +40,7 @@ chmod +x demo.sh
 
 ## Container Images
 
-Both Dockerfiles use **UBI 9** (Red Hat Universal Base Image) for OpenShift compatibility:
+Both Containerfiles use **UBI 9** (Red Hat Universal Base Image) for OpenShift compatibility:
 
 | Image | Base |
 |-------|------|

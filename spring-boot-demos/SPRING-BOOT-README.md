@@ -21,9 +21,9 @@ OpenShift and Kubernetes. Covers all 9 demos from container images through Panam
 | `docker.io/library/eclipse-temurin:25` | Eclipse Adoptium | G1GC | Leyden AOT cache, Panama FFM, ONNX inference |
 | `docker.io/library/eclipse-temurin:25-jre` | Eclipse Adoptium | G1GC | Production (JDK 25 features) |
 
-### Multi-stage Dockerfile pattern
+### Multi-stage Containerfile pattern
 
-```dockerfile
+```containerfile
 # Stage 1: Build
 FROM docker.io/library/maven:3.9-eclipse-temurin-21 AS builder
 WORKDIR /app
@@ -94,7 +94,7 @@ enough to trigger OOMKilled under load.
 ## Garbage Collector Selection
 
 Spring Boot has no framework-level GC property. Set the GC via `JAVA_OPTS` or JVM
-arguments in the Dockerfile `ENTRYPOINT`.
+arguments in the Containerfile `ENTRYPOINT`.
 
 ### Available collectors
 
@@ -132,8 +132,8 @@ env:
     value: "-XX:+UseShenandoahGC -XX:MaxRAMPercentage=75.0"
 ```
 
-```dockerfile
-# Dockerfile ENTRYPOINT
+```containerfile
+# Containerfile ENTRYPOINT
 ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
 ```
 
@@ -184,9 +184,9 @@ benefits dramatically because of its high class count.
 | AppCDS | 1.7 s | 47% faster |
 | AppCDS + `TieredStopAtLevel=1` | 1.4 s | 56% faster |
 
-### 3-stage Dockerfile
+### 3-stage Containerfile
 
-```dockerfile
+```containerfile
 # Stage 1: Build
 FROM docker.io/library/maven:3.9-eclipse-temurin-21 AS builder
 WORKDIR /app
@@ -235,9 +235,9 @@ structures. Available in JDK 25.
    and build the AOT cache.
 3. **Production run** -- Load the AOT cache with `-XX:AOTCache=app.aot`.
 
-### Dockerfile
+### Containerfile
 
-```dockerfile
+```containerfile
 # Stage 1: Build
 FROM docker.io/library/maven:3.9-eclipse-temurin-25 AS builder
 WORKDIR /app
@@ -606,9 +606,9 @@ It replaces JNI.
 Without this flag, the JVM will throw an `IllegalCallerException` when the application
 attempts to use the FFM API.
 
-### Dockerfile for Panama
+### Containerfile for Panama
 
-```dockerfile
+```containerfile
 FROM docker.io/library/eclipse-temurin:25
 COPY target/*.jar app.jar
 ENTRYPOINT ["java", \

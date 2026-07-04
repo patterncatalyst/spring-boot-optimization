@@ -247,7 +247,7 @@ For latency-sensitive workloads, this tradeoff is almost always worthwhile.
 
 ### Recommended container configuration
 
-```dockerfile
+```containerfile
 FROM registry.access.redhat.com/ubi9/openjdk-21-runtime
 COPY target/*.jar app.jar
 ENTRYPOINT ["java", \

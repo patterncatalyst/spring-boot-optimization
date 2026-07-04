@@ -55,7 +55,7 @@ JVM flag required to enable native access:
 --enable-native-access=ALL-UNNAMED
 ```
 
-## Three-stage Dockerfile
+## Three-stage Containerfile
 
 | Stage | Image | Purpose |
 |-------|-------|---------|

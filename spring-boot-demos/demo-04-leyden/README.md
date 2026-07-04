@@ -37,7 +37,7 @@ java -XX:AOTMode=create -XX:AOTConfiguration=app.aotconf \
 java -XX:AOTCache=app.aot -jar app.jar
 ```
 
-The 3-stage Dockerfile handles steps 1 and 2 at build time. Only the final
+The 3-stage Containerfile handles steps 1 and 2 at build time. Only the final
 `app.jar` + `app.aot` are copied into the production image.
 
 ## Running the Demo
@@ -100,8 +100,8 @@ demo-04-leyden/
   README.md                  -- this file
   app/
     pom.xml                  -- Spring Boot 4.0.5, java.version=25
-    Dockerfile.baseline      -- 2-stage, JDK 25, no AOT cache
-    Dockerfile.leyden        -- 3-stage, training + cache creation
+    Containerfile.baseline   -- 2-stage, JDK 25, no AOT cache
+    Containerfile.leyden     -- 3-stage, training + cache creation
     src/main/java/demo/leyden/
       LeydenDemoApp.java     -- @SpringBootApplication + endpoints
     src/main/resources/

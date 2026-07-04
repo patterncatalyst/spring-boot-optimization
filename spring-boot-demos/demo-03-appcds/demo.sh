@@ -40,13 +40,13 @@ echo "  (First run downloads base images; subsequent runs use cache)"
 echo
 
 echo -e "  Building ${RED}BASELINE${RESET} image (no AppCDS)..."
-podman build -f app/Dockerfile.baseline -t startup-demo:baseline ./app \
+podman build -f app/Containerfile.baseline -t startup-demo:baseline ./app \
     --progress=plain 2>&1 | grep -E "^(STEP|COMMIT|#[0-9]| => |ERROR|Successfully)" | head -20
 
 echo
 echo -e "  Building ${GREEN}AppCDS${RESET} image (with shared archive)..."
 echo "  (This runs a training pass to generate the CDS archive — takes ~30s extra)"
-podman build -f app/Dockerfile.appcds -t startup-demo:appcds ./app \
+podman build -f app/Containerfile.appcds -t startup-demo:appcds ./app \
     --progress=plain 2>&1 | grep -E "^(STEP|COMMIT|#[0-9]| => |ERROR|Successfully|AppCDS)" | head -30
 
 echo

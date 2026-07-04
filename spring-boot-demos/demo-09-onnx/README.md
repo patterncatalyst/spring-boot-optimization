@@ -50,7 +50,7 @@ chmod +x demo.sh
 ```
 demo-09-onnx/
 ├── demo.sh                                ← Run this
-├── Dockerfile                             ← Two-stage build (no C++ needed)
+├── Containerfile                          ← Two-stage build (no C++ needed)
 │
 └── app/
     ├── pom.xml                            ← langchain4j-embeddings-all-minilm-l6-v2

@@ -141,9 +141,9 @@ From slowest to fastest, with implementation complexity:
 | CRaC (Checkpoint/Restore) | 90-95% | High | JDK 17+ (Azul) |
 | GraalVM Native Image | 95-99% | Very High | GraalVM |
 
-### AppCDS quick setup (3-stage Dockerfile)
+### AppCDS quick setup (3-stage Containerfile)
 
-```dockerfile
+```containerfile
 # Stage 1: Build
 FROM maven:3.9-eclipse-temurin-21 AS builder
 COPY . /app
@@ -168,7 +168,7 @@ ENTRYPOINT ["java", "-XX:SharedArchiveFile=app-cds.jsa", \
 
 ### Project Leyden quick setup
 
-```dockerfile
+```containerfile
 FROM eclipse-temurin:25 AS trainer
 COPY target/*.jar app.jar
 RUN java -XX:AOTMode=record -XX:AOTConfiguration=app.aotconf \
@@ -550,7 +550,7 @@ java -XX:SharedArchiveFile=app-cds.jsa \
 | **Memory footprint** | Same as baseline | Same as baseline | 50-80% lower |
 | **Reflection support** | Full | Full | Requires configuration |
 | **Spring Boot support** | Full | Full (4.0.5+) | Via Spring Native (experimental) |
-| **Complexity** | Low (3-stage Dockerfile) | Medium (record + create steps) | High (reflection config, build time) |
+| **Complexity** | Low (3-stage Containerfile) | Medium (record + create steps) | High (reflection config, build time) |
 | **Portability** | Archive tied to JDK version | Cache tied to JDK version | Platform-specific binary |
 
 ### Recommendation

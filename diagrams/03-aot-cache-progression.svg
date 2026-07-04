@@ -15,7 +15,7 @@
 <rect x="480" y="120" width="190" height="80" rx="9" fill="#281E0D" stroke="#F5A623" stroke-width="2"/>
 <text x="575.0" y="150.5" font-size="13.5" font-weight="700" fill="#ECF0F1" text-anchor="middle">Spring Boot + AppCDS</text>
 <text x="575.0" y="167.5" font-size="11.5" fill="#90A4AE" text-anchor="middle">35-55% startup gain</text>
-<text x="575.0" y="182.5" font-size="11.5" fill="#90A4AE" text-anchor="middle">3-stage Dockerfile</text>
+<text x="575.0" y="182.5" font-size="11.5" fill="#90A4AE" text-anchor="middle">3-stage Containerfile</text>
 <rect x="40" y="260" width="190" height="80" rx="9" fill="#1A0D28" stroke="#9B59B6" stroke-width="1.5"/>
 <text x="135.0" y="290.5" font-size="13.5" font-weight="700" fill="#ECF0F1" text-anchor="middle">Leyden (JDK 24)</text>
 <text x="135.0" y="307.5" font-size="11.5" fill="#90A4AE" text-anchor="middle">AOT class loading</text>

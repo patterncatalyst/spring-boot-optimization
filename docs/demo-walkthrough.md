@@ -108,7 +108,7 @@ curl "http://localhost:8080/allocate?mb=100"</code></pre>
   </div>
 
   <h3>Learning Objective</h3>
-  <p>See the 35-55% startup reduction from AppCDS, understand the 3-stage Dockerfile pattern, and learn why Spring Boot benefits more from CDS than build-time frameworks.</p>
+  <p>See the 35-55% startup reduction from AppCDS, understand the 3-stage Containerfile pattern, and learn why Spring Boot benefits more from CDS than build-time frameworks.</p>
 
   <h3>Steps</h3>
   <ol style="line-height:2;">
@@ -116,7 +116,7 @@ curl "http://localhost:8080/allocate?mb=100"</code></pre>
     <li>Run: <code>./demo.sh</code></li>
     <li>The script builds two images: baseline (no CDS) and optimized (with AppCDS archive)</li>
     <li>Compare the startup times printed in the output</li>
-    <li>Note the 3-stage Dockerfile: builder → CDS trainer → runtime</li>
+    <li>Note the 3-stage Containerfile: builder → CDS trainer → runtime</li>
   </ol>
 
   <h3>What to Look For</h3>
@@ -128,7 +128,7 @@ curl "http://localhost:8080/allocate?mb=100"</code></pre>
   </ul>
 
   <h3>Key Takeaway</h3>
-  <p>Spring Boot's runtime class loading is its Achilles' heel for startup — and that's exactly what AppCDS caches. The more classes your app loads, the bigger the CDS win. This is a Dockerfile-only change with zero application code modifications.</p>
+  <p>Spring Boot's runtime class loading is its Achilles' heel for startup — and that's exactly what AppCDS caches. The more classes your app loads, the bigger the CDS win. This is a Containerfile-only change with zero application code modifications.</p>
 
   <!-- ═══════ DEMO 04 ═══════ -->
   <h2 id="demo-04" style="color:var(--purple);margin-top:2rem;border-top:1px solid var(--border);padding-top:1.5rem;">
@@ -141,7 +141,7 @@ curl "http://localhost:8080/allocate?mb=100"</code></pre>
   </div>
 
   <h3>Learning Objective</h3>
-  <p>Understand the Project Leyden workflow for Spring Boot: explicit <code>-XX:AOTMode=record</code> and <code>-XX:AOTMode=create</code> steps in a 3-stage Dockerfile.</p>
+  <p>Understand the Project Leyden workflow for Spring Boot: explicit <code>-XX:AOTMode=record</code> and <code>-XX:AOTMode=create</code> steps in a 3-stage Containerfile.</p>
 
   <h3>Steps</h3>
   <ol style="line-height:2;">
@@ -287,7 +287,7 @@ curl -X POST http://localhost:8080/panama/compute \
     <li>Arena-managed native memory: allocated on call, freed when Arena closes</li>
     <li>No JNI boilerplate: MethodHandle + Linker replaces javah + native headers</li>
     <li>The C++20 native library computes statistics (P99, standard deviation) in native code</li>
-    <li>The 3-stage Dockerfile: C++ on UBI9, Java on Temurin 25, runtime on Temurin 25 JRE</li>
+    <li>The 3-stage Containerfile: C++ on UBI9, Java on Temurin 25, runtime on Temurin 25 JRE</li>
   </ul>
 
   <!-- ═══════ DEMO 09 ═══════ -->
@@ -344,7 +344,7 @@ curl http://localhost:8080/onnx/benchmark</code></pre>
     <tbody>
       <tr><td>01</td><td>UseContainerSupport + MaxRAMPercentage</td><td>Prevents OOMKill, correct heap sizing</td></tr>
       <tr><td>02</td><td>Actuator + Micrometer + Prometheus</td><td>Full JVM observability</td></tr>
-      <tr><td>03</td><td>AppCDS 3-stage Dockerfile</td><td>35-55% faster startup</td></tr>
+      <tr><td>03</td><td>AppCDS 3-stage Containerfile</td><td>35-55% faster startup</td></tr>
       <tr><td>04</td><td>Project Leyden AOT Cache</td><td>40-55% faster startup (JDK 25)</td></tr>
       <tr><td>05</td><td>Spring gRPC + Protobuf</td><td>10x smaller payloads, built-in streaming</td></tr>
       <tr><td>06</td><td>ZGC vs G1GC comparison</td><td>&lt;1ms pauses vs 50-500ms</td></tr>

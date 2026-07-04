@@ -54,7 +54,7 @@ title: Home
       <a href="{{ '/demos/demo-03-appcds/' | relative_url }}" class="card">
         <div class="card-num">Demo 03 · Core</div>
         <h3>AppCDS Startup Acceleration</h3>
-        <p>Spring Boot gets ~35-55% improvement — 3-stage Dockerfile with training run. The big win for fat JARs.</p>
+        <p>Spring Boot gets ~35-55% improvement — 3-stage Containerfile with training run. The big win for fat JARs.</p>
         <div class="card-foot"><span class="tag">Spring Boot 4.0.5</span><span class="tag tag-muted">~8 min</span></div>
       </a>
       <a href="{{ '/demos/demo-04-leyden/' | relative_url }}" class="card">

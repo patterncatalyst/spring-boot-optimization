@@ -28,8 +28,8 @@ echo "╚═══════════════════════�
 echo -e "${RESET}"
 
 echo -e "${YELLOW}Step 1: Building container images...${RESET}"
-podman build -f Dockerfile.bad  -t jvm-demo:bad  . --quiet
-podman build -f Dockerfile.good -t jvm-demo:good . --quiet
+podman build -f Containerfile.bad  -t jvm-demo:bad  . --quiet
+podman build -f Containerfile.good -t jvm-demo:good . --quiet
 echo -e "${GREEN}Images built${RESET}"
 echo
 

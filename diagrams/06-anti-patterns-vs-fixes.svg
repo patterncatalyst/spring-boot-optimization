@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 480" font-family="'Red Hat Text', system-ui, sans-serif" role="img">
+<defs><marker id="a" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#555"/></marker><marker id="am" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#b8650a"/></marker></defs>
+<rect x="20" y="90" width="410" height="380" rx="12" fill="#2C1810" stroke="#ddd"/>
+<text x="32" y="110" font-size="12" font-weight="700" fill="#888">ANTI-PATTERNS</text>
+<rect x="450" y="90" width="410" height="380" rx="12" fill="#0D2818" stroke="#ddd"/>
+<text x="462" y="110" font-size="12" font-weight="700" fill="#888">FIXES</text>
+<rect x="40" y="120" width="370" height="50" rx="9" fill="#2C1810" stroke="#E84855" stroke-width="1.5"/>
+<text x="225.0" y="143.0" font-size="13.5" font-weight="700" fill="#ECF0F1" text-anchor="middle">Hardcoded -Xmx/-Xms</text>
+<text x="225.0" y="160.0" font-size="11.5" fill="#90A4AE" text-anchor="middle">Breaks with VPA / container resize</text>
+<rect x="40" y="185" width="370" height="50" rx="9" fill="#2C1810" stroke="#E84855" stroke-width="1.5"/>
+<text x="225.0" y="208.0" font-size="13.5" font-weight="700" fill="#ECF0F1" text-anchor="middle">MaxRAMPercentage=90</text>
+<text x="225.0" y="225.0" font-size="11.5" fill="#90A4AE" text-anchor="middle">Starves Metaspace and off-heap regions</text>
+<rect x="40" y="250" width="370" height="50" rx="9" fill="#2C1810" stroke="#E84855" stroke-width="1.5"/>
+<text x="225.0" y="273.0" font-size="13.5" font-weight="700" fill="#ECF0F1" text-anchor="middle">Default ParallelGCThreads</text>
+<text x="225.0" y="290.0" font-size="11.5" fill="#90A4AE" text-anchor="middle">64 GC threads on a 4-CPU container</text>
+<rect x="40" y="315" width="370" height="50" rx="9" fill="#2C1810" stroke="#E84855" stroke-width="1.5"/>
+<text x="225.0" y="338.0" font-size="13.5" font-weight="700" fill="#ECF0F1" text-anchor="middle">CPU-based HPA</text>
+<text x="225.0" y="355.0" font-size="11.5" fill="#90A4AE" text-anchor="middle">GC pauses trigger false scale-out</text>
+<rect x="40" y="380" width="370" height="50" rx="9" fill="#2C1810" stroke="#E84855" stroke-width="1.5"/>
+<text x="225.0" y="403.0" font-size="13.5" font-weight="700" fill="#ECF0F1" text-anchor="middle">No AppCDS with 4-8s startup</text>
+<text x="225.0" y="420.0" font-size="11.5" fill="#90A4AE" text-anchor="middle">Spring Boot loads 10k+ classes at boot</text>
+<rect x="470" y="120" width="370" height="50" rx="9" fill="#0D2818" stroke="#27AE60" stroke-width="1.5"/>
+<text x="655.0" y="143.0" font-size="13.5" font-weight="700" fill="#ECF0F1" text-anchor="middle">MaxRAMPercentage=75.0</text>
+<text x="655.0" y="160.0" font-size="11.5" fill="#90A4AE" text-anchor="middle">Dynamic — scales with container limit</text>
+<rect x="470" y="185" width="370" height="50" rx="9" fill="#0D2818" stroke="#27AE60" stroke-width="1.5"/>
+<text x="655.0" y="208.0" font-size="13.5" font-weight="700" fill="#ECF0F1" text-anchor="middle">75% + MaxMetaspaceSize=256m</text>
+<text x="655.0" y="225.0" font-size="11.5" fill="#90A4AE" text-anchor="middle">Reserve 25% for off-heap regions</text>
+<rect x="470" y="250" width="370" height="50" rx="9" fill="#0D2818" stroke="#27AE60" stroke-width="1.5"/>
+<text x="655.0" y="273.0" font-size="13.5" font-weight="700" fill="#ECF0F1" text-anchor="middle">ParallelGCThreads = CPU request</text>
+<text x="655.0" y="290.0" font-size="11.5" fill="#90A4AE" text-anchor="middle">Match GC threads to available CPUs</text>
+<rect x="470" y="315" width="370" height="50" rx="9" fill="#0D2818" stroke="#27AE60" stroke-width="1.5"/>
+<text x="655.0" y="338.0" font-size="13.5" font-weight="700" fill="#ECF0F1" text-anchor="middle">HPA on RPS, not CPU</text>
+<text x="655.0" y="355.0" font-size="11.5" fill="#90A4AE" text-anchor="middle">KEDA or Prometheus Adapter</text>
+<rect x="470" y="380" width="370" height="50" rx="9" fill="#0D2818" stroke="#27AE60" stroke-width="1.5"/>
+<text x="655.0" y="403.0" font-size="13.5" font-weight="700" fill="#ECF0F1" text-anchor="middle">3-stage AppCDS Dockerfile</text>
+<text x="655.0" y="420.0" font-size="11.5" fill="#90A4AE" text-anchor="middle">35-55% startup reduction, zero code changes</text>
+<path d="M410,145 L470,145" fill="none" stroke="#b8650a" stroke-width="2" marker-end="url(#am)"/>
+<path d="M410,210 L470,210" fill="none" stroke="#b8650a" stroke-width="2" marker-end="url(#am)"/>
+<path d="M410,275 L470,275" fill="none" stroke="#b8650a" stroke-width="2" marker-end="url(#am)"/>
+<path d="M410,340 L470,340" fill="none" stroke="#b8650a" stroke-width="2" marker-end="url(#am)"/>
+<path d="M410,405 L470,405" fill="none" stroke="#b8650a" stroke-width="2" marker-end="url(#am)"/>
+<text x="440" y="25" font-size="20" fill="#00BCD4" text-anchor="middle" font-weight="700">Anti-Patterns vs Fixes</text>
+<text x="440" y="50" font-size="13" fill="#90A4AE" text-anchor="middle">Every fix is a configuration change — no application code changes required</text>
+</svg>

@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 380" font-family="'Red Hat Text', system-ui, sans-serif" role="img">
+<defs><marker id="a" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#555"/></marker><marker id="am" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#b8650a"/></marker></defs>
+<rect x="20" y="100" width="840" height="120" rx="12" fill="#0D1B2A" stroke="#ddd"/>
+<text x="32" y="120" font-size="12" font-weight="700" fill="#888">JDK 10-21</text>
+<rect x="20" y="240" width="840" height="120" rx="12" fill="#1A0D28" stroke="#ddd"/>
+<text x="32" y="260" font-size="12" font-weight="700" fill="#888">JDK 24-25+</text>
+<rect x="40" y="120" width="170" height="80" rx="9" fill="#122040" stroke="#1E3A5F" stroke-width="2"/>
+<text x="125.0" y="150.5" font-size="13.5" font-weight="700" fill="#ECF0F1" text-anchor="middle">CDS</text>
+<text x="125.0" y="167.5" font-size="11.5" fill="#90A4AE" text-anchor="middle">Class Data Sharing</text>
+<text x="125.0" y="182.5" font-size="11.5" fill="#90A4AE" text-anchor="middle">JDK base classes only</text>
+<rect x="250" y="120" width="190" height="80" rx="9" fill="#0D2818" stroke="#27AE60" stroke-width="1.5"/>
+<text x="345.0" y="150.5" font-size="13.5" font-weight="700" fill="#ECF0F1" text-anchor="middle">AppCDS</text>
+<text x="345.0" y="167.5" font-size="11.5" fill="#90A4AE" text-anchor="middle">Application CDS</text>
+<text x="345.0" y="182.5" font-size="11.5" fill="#90A4AE" text-anchor="middle">All classes + app classes</text>
+<rect x="480" y="120" width="190" height="80" rx="9" fill="#281E0D" stroke="#F5A623" stroke-width="2"/>
+<text x="575.0" y="150.5" font-size="13.5" font-weight="700" fill="#ECF0F1" text-anchor="middle">Spring Boot + AppCDS</text>
+<text x="575.0" y="167.5" font-size="11.5" fill="#90A4AE" text-anchor="middle">35-55% startup gain</text>
+<text x="575.0" y="182.5" font-size="11.5" fill="#90A4AE" text-anchor="middle">3-stage Dockerfile</text>
+<rect x="40" y="260" width="190" height="80" rx="9" fill="#1A0D28" stroke="#9B59B6" stroke-width="1.5"/>
+<text x="135.0" y="290.5" font-size="13.5" font-weight="700" fill="#ECF0F1" text-anchor="middle">Leyden (JDK 24)</text>
+<text x="135.0" y="307.5" font-size="11.5" fill="#90A4AE" text-anchor="middle">AOT class loading</text>
+<text x="135.0" y="322.5" font-size="11.5" fill="#90A4AE" text-anchor="middle">~40% startup reduction</text>
+<rect x="280" y="260" width="210" height="80" rx="9" fill="#1A0D28" stroke="#9B59B6" stroke-width="1.5"/>
+<text x="385.0" y="290.5" font-size="13.5" font-weight="700" fill="#ECF0F1" text-anchor="middle">Leyden (JDK 25 LTS)</text>
+<text x="385.0" y="307.5" font-size="11.5" fill="#90A4AE" text-anchor="middle">Method profiles + ergonomics</text>
+<text x="385.0" y="322.5" font-size="11.5" fill="#90A4AE" text-anchor="middle">~40-55% startup reduction</text>
+<rect x="540" y="260" width="190" height="80" rx="9" fill="#0D1B2A" stroke="#1E3A5F" stroke-width="1.5" stroke-dasharray="6 4"/>
+<text x="635.0" y="290.5" font-size="13.5" font-weight="700" fill="#ECF0F1" text-anchor="middle">Leyden (JDK 26+)</text>
+<text x="635.0" y="307.5" font-size="11.5" fill="#90A4AE" text-anchor="middle">ZGC support</text>
+<text x="635.0" y="322.5" font-size="11.5" fill="#90A4AE" text-anchor="middle">Pre-compiled native code</text>
+<path d="M210,160 L250,160" fill="none" stroke="#b8650a" stroke-width="2" marker-end="url(#am)"/>
+<path d="M440,160 L480,160" fill="none" stroke="#b8650a" stroke-width="2" marker-end="url(#am)"/>
+<path d="M230,300 L280,300" fill="none" stroke="#b8650a" stroke-width="2" marker-end="url(#am)"/>
+<path d="M490,300 L540,300" fill="none" stroke="#555" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#a)"/>
+<path d="M575,200 L375,260" fill="none" stroke="#555" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#a)"/>
+<text x="481.0" y="224.0" font-size="11" fill="#ffffff" stroke="#ffffff" stroke-width="3" paint-order="stroke" text-anchor="middle">evolution</text>
+<text x="481.0" y="224.0" font-size="11" fill="#555" text-anchor="middle">evolution</text>
+<text x="440" y="30" font-size="20" fill="#00BCD4" text-anchor="middle" font-weight="700">AOT Cache Progression: CDS → AppCDS → Leyden</text>
+<text x="440" y="55" font-size="13" fill="#90A4AE" text-anchor="middle">Each generation caches more — configure once, benefit on every JDK upgrade</text>
+</svg>

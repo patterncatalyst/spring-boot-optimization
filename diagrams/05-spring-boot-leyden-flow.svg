@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 420" font-family="'Red Hat Text', system-ui, sans-serif" role="img">
+<defs><marker id="a" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#555"/></marker><marker id="am" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#b8650a"/></marker></defs>
+<rect x="20" y="100" width="260" height="130" rx="12" fill="#0D1B2A" stroke="#ddd"/>
+<text x="32" y="120" font-size="12" font-weight="700" fill="#888">Stage 1: Compile</text>
+<rect x="300" y="100" width="280" height="280" rx="12" fill="#1A0D28" stroke="#ddd"/>
+<text x="312" y="120" font-size="12" font-weight="700" fill="#888">Stage 2: Train</text>
+<rect x="600" y="100" width="260" height="130" rx="12" fill="#0D2818" stroke="#ddd"/>
+<text x="612" y="120" font-size="12" font-weight="700" fill="#888">Stage 3: Runtime</text>
+<rect x="40" y="130" width="220" height="80" rx="9" fill="#122040" stroke="#1E3A5F" stroke-width="2"/>
+<text x="150.0" y="160.5" font-size="13.5" font-weight="700" fill="#ECF0F1" text-anchor="middle">Maven Build</text>
+<text x="150.0" y="177.5" font-size="11.5" fill="#90A4AE" text-anchor="middle">mvn package -DskipTests</text>
+<text x="150.0" y="192.5" font-size="11.5" fill="#90A4AE" text-anchor="middle">Output: app.jar</text>
+<rect x="320" y="130" width="240" height="80" rx="9" fill="#1A0D28" stroke="#9B59B6" stroke-width="1.5"/>
+<text x="440.0" y="160.5" font-size="13.5" font-weight="700" fill="#ECF0F1" text-anchor="middle">-XX:AOTMode=record</text>
+<text x="440.0" y="177.5" font-size="11.5" fill="#90A4AE" text-anchor="middle">Run app, capture profile</text>
+<text x="440.0" y="192.5" font-size="11.5" fill="#90A4AE" text-anchor="middle">Output: app.aotconf</text>
+<rect x="320" y="270" width="240" height="90" rx="9" fill="#1A0D28" stroke="#9B59B6" stroke-width="1.5"/>
+<text x="440.0" y="305.5" font-size="13.5" font-weight="700" fill="#ECF0F1" text-anchor="middle">-XX:AOTMode=create</text>
+<text x="440.0" y="322.5" font-size="11.5" fill="#90A4AE" text-anchor="middle">Build AOT cache from profile</text>
+<text x="440.0" y="337.5" font-size="11.5" fill="#90A4AE" text-anchor="middle">Output: app.aot</text>
+<rect x="620" y="130" width="220" height="80" rx="9" fill="#0D2818" stroke="#27AE60" stroke-width="1.5"/>
+<text x="730.0" y="160.5" font-size="13.5" font-weight="700" fill="#ECF0F1" text-anchor="middle">-XX:AOTCache=app.aot</text>
+<text x="730.0" y="177.5" font-size="11.5" fill="#90A4AE" text-anchor="middle">Startup with cached data</text>
+<text x="730.0" y="192.5" font-size="11.5" fill="#90A4AE" text-anchor="middle">~40-55% faster</text>
+<rect x="40" y="280" width="100" height="50" rx="9" fill="#281E0D" stroke="#F5A623" stroke-width="2"/>
+<text x="90.0" y="310.5" font-size="13.5" font-weight="700" fill="#ECF0F1" text-anchor="middle">app.jar</text>
+<rect x="620" y="280" width="100" height="50" rx="9" fill="#00BCD4" stroke="#00BCD4" stroke-width="2"/>
+<text x="670.0" y="310.5" font-size="13.5" font-weight="700" fill="#ffffff" text-anchor="middle">app.aot</text>
+<rect x="740" y="280" width="100" height="50" rx="9" fill="#281E0D" stroke="#F5A623" stroke-width="2"/>
+<text x="790.0" y="310.5" font-size="13.5" font-weight="700" fill="#ECF0F1" text-anchor="middle">app.jar</text>
+<path d="M260,170 L320,170" fill="none" stroke="#b8650a" stroke-width="2" marker-end="url(#am)"/>
+<text x="296.0" y="164.0" font-size="11" fill="#ffffff" stroke="#ffffff" stroke-width="3" paint-order="stroke" text-anchor="middle">jar</text>
+<text x="296.0" y="164.0" font-size="11" fill="#b8650a" text-anchor="middle">jar</text>
+<path d="M440,210 L440,270" fill="none" stroke="#555" stroke-width="2" marker-end="url(#a)"/>
+<text x="446.0" y="234.0" font-size="11" fill="#ffffff" stroke="#ffffff" stroke-width="3" paint-order="stroke" text-anchor="middle">aotconf</text>
+<text x="446.0" y="234.0" font-size="11" fill="#555" text-anchor="middle">aotconf</text>
+<path d="M560,315 L620,290" fill="none" stroke="#b8650a" stroke-width="2" marker-end="url(#am)"/>
+<text x="596.0" y="296.5" font-size="11" fill="#ffffff" stroke="#ffffff" stroke-width="3" paint-order="stroke" text-anchor="middle">cache</text>
+<text x="596.0" y="296.5" font-size="11" fill="#b8650a" text-anchor="middle">cache</text>
+<path d="M140,305 L320,170" fill="none" stroke="#555" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#a)"/>
+<text x="440" y="30" font-size="20" fill="#00BCD4" text-anchor="middle" font-weight="700">Spring Boot + Project Leyden — 3-Stage Build</text>
+<text x="440" y="55" font-size="13" fill="#90A4AE" text-anchor="middle">Explicit -XX:AOTMode steps: record profile, create cache, run with cache</text>
+</svg>

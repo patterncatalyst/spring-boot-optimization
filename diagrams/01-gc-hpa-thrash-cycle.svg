@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 420" font-family="'Red Hat Text', system-ui, sans-serif" role="img">
+<defs><marker id="a" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#555"/></marker><marker id="am" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#b8650a"/></marker></defs>
+<rect x="20" y="100" width="840" height="300" rx="12" fill="#0D1B2A" stroke="#ddd"/>
+<text x="32" y="120" font-size="12" font-weight="700" fill="#888">Kubernetes Cluster</text>
+<rect x="60" y="140" width="170" height="70" rx="9" fill="#0D2818" stroke="#27AE60" stroke-width="1.5"/>
+<text x="145.0" y="173.0" font-size="13.5" font-weight="700" fill="#ECF0F1" text-anchor="middle">JVM Pod</text>
+<text x="145.0" y="190.0" font-size="11.5" fill="#90A4AE" text-anchor="middle">Running normally</text>
+<rect x="280" y="140" width="170" height="70" rx="9" fill="#2C1810" stroke="#E84855" stroke-width="1.5"/>
+<text x="365.0" y="173.0" font-size="13.5" font-weight="700" fill="#ECF0F1" text-anchor="middle">GC Pause</text>
+<text x="365.0" y="190.0" font-size="11.5" fill="#90A4AE" text-anchor="middle">CPU spike 100%</text>
+<rect x="500" y="140" width="170" height="70" rx="9" fill="#281E0D" stroke="#F5A623" stroke-width="2"/>
+<text x="585.0" y="173.0" font-size="13.5" font-weight="700" fill="#ECF0F1" text-anchor="middle">HPA Controller</text>
+<text x="585.0" y="190.0" font-size="11.5" fill="#90A4AE" text-anchor="middle">Sees CPU &gt; threshold</text>
+<rect x="720" y="140" width="120" height="70" rx="9" fill="#2C1810" stroke="#E84855" stroke-width="1.5"/>
+<text x="780.0" y="173.0" font-size="13.5" font-weight="700" fill="#ECF0F1" text-anchor="middle">Scale Out</text>
+<text x="780.0" y="190.0" font-size="11.5" fill="#90A4AE" text-anchor="middle">+2 pods</text>
+<rect x="60" y="280" width="170" height="70" rx="9" fill="#2C1810" stroke="#E84855" stroke-width="1.5"/>
+<text x="145.0" y="313.0" font-size="13.5" font-weight="700" fill="#ECF0F1" text-anchor="middle">New Pods</text>
+<text x="145.0" y="330.0" font-size="11.5" fill="#90A4AE" text-anchor="middle">Cold start + GC</text>
+<rect x="280" y="280" width="170" height="70" rx="9" fill="#2C1810" stroke="#E84855" stroke-width="1.5"/>
+<text x="365.0" y="313.0" font-size="13.5" font-weight="700" fill="#ECF0F1" text-anchor="middle">More CPU Spikes</text>
+<text x="365.0" y="330.0" font-size="11.5" fill="#90A4AE" text-anchor="middle">Cascading GC</text>
+<rect x="500" y="280" width="170" height="70" rx="9" fill="#281E0D" stroke="#F5A623" stroke-width="2"/>
+<text x="585.0" y="313.0" font-size="13.5" font-weight="700" fill="#ECF0F1" text-anchor="middle">HPA Again</text>
+<text x="585.0" y="330.0" font-size="11.5" fill="#90A4AE" text-anchor="middle">Scales out more</text>
+<rect x="720" y="280" width="120" height="70" rx="9" fill="#00BCD4" stroke="#00BCD4" stroke-width="2"/>
+<text x="780.0" y="313.0" font-size="13.5" font-weight="700" fill="#ffffff" text-anchor="middle">20 pods</text>
+<text x="780.0" y="330.0" font-size="11.5" fill="#dddddd" text-anchor="middle">Needs 3</text>
+<path d="M230,175 L280,175" fill="none" stroke="#555" stroke-width="2" marker-end="url(#a)"/>
+<text x="261.0" y="169.0" font-size="11" fill="#ffffff" stroke="#ffffff" stroke-width="3" paint-order="stroke" text-anchor="middle">STW</text>
+<text x="261.0" y="169.0" font-size="11" fill="#555" text-anchor="middle">STW</text>
+<path d="M450,175 L500,175" fill="none" stroke="#b8650a" stroke-width="2" marker-end="url(#am)"/>
+<text x="481.0" y="169.0" font-size="11" fill="#ffffff" stroke="#ffffff" stroke-width="3" paint-order="stroke" text-anchor="middle">CPU &gt; 80%</text>
+<text x="481.0" y="169.0" font-size="11" fill="#b8650a" text-anchor="middle">CPU &gt; 80%</text>
+<path d="M670,175 L720,175" fill="none" stroke="#555" stroke-width="2" marker-end="url(#a)"/>
+<path d="M780,210 L780,280" fill="none" stroke="#555" stroke-width="2" marker-end="url(#a)"/>
+<path d="M720,315 L670,315" fill="none" stroke="#555" stroke-width="2" marker-end="url(#a)"/>
+<path d="M500,315 L450,315" fill="none" stroke="#555" stroke-width="2" marker-end="url(#a)"/>
+<path d="M280,315 L230,315" fill="none" stroke="#b8650a" stroke-width="2" marker-end="url(#am)"/>
+<text x="261.0" y="309.0" font-size="11" fill="#ffffff" stroke="#ffffff" stroke-width="3" paint-order="stroke" text-anchor="middle">repeat</text>
+<text x="261.0" y="309.0" font-size="11" fill="#b8650a" text-anchor="middle">repeat</text>
+<path d="M60,315 L60,210" fill="none" stroke="#555" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#a)"/>
+<text x="66.0" y="256.5" font-size="11" fill="#ffffff" stroke="#ffffff" stroke-width="3" paint-order="stroke" text-anchor="middle">cycle</text>
+<text x="66.0" y="256.5" font-size="11" fill="#555" text-anchor="middle">cycle</text>
+<text x="440" y="30" font-size="20" fill="#00BCD4" text-anchor="middle" font-weight="700">GC-Induced HPA Thrash Cycle</text>
+<text x="440" y="55" font-size="13" fill="#90A4AE" text-anchor="middle">Why CPU-based HPA fails for Java workloads</text>
+</svg>

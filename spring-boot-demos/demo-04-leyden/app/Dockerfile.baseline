@@ -1,0 +1,29 @@
+# ============================================================
+# Demo 04 BASELINE: Spring Boot 4.0.5 on JDK 25 -- no Leyden cache
+#
+# JDK 25 LTS includes:
+#   JEP 514 -- AOT Command-Line Ergonomics (2-step workflow)
+#   JEP 515 -- AOT Method Profiling
+# But NO -XX:AOTCache flag = cold class loading every start
+# ============================================================
+
+# -- Stage 1: Build -----------------------------------------------
+FROM docker.io/library/maven:3.9-eclipse-temurin-25 AS builder
+WORKDIR /build
+COPY pom.xml .
+COPY src ./src
+RUN mvn package -Dmaven.test.skip=true --no-transfer-progress
+
+# -- Stage 2: Runtime ---------------------------------------------
+FROM docker.io/library/eclipse-temurin:25-jre
+WORKDIR /app
+
+COPY --from=builder /build/target/*.jar app.jar
+
+ENV JAVA_OPTS="-XX:+UseContainerSupport \
+               -XX:MaxRAMPercentage=75.0 \
+               -XX:+UseG1GC"
+
+# No -XX:AOTCache flag -- baseline measurement
+EXPOSE 8080
+ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar app.jar"]

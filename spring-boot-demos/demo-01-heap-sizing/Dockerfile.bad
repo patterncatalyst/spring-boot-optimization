@@ -1,0 +1,24 @@
+# ============================================================
+# Demo 1 — BAD: JVM without container awareness
+# This JVM will read HOST memory, not container limits!
+# ============================================================
+FROM registry.access.redhat.com/ubi9/openjdk-21 AS builder
+USER root
+WORKDIR /build
+COPY src/HeapInfo.java .
+RUN javac HeapInfo.java
+
+FROM registry.access.redhat.com/ubi9/openjdk-21-runtime
+USER root
+WORKDIR /deployments
+COPY --from=builder /build/HeapInfo.class .
+
+# Disable the UBI default JAVA_OPTS so the JVM runs completely untuned
+ENV JAVA_OPTS=""
+
+# NO UseContainerSupport flags
+# NO MaxRAMPercentage
+# JVM will read /proc/meminfo and see the HOST's full RAM
+# On a 16GB machine, it will claim ~4GB heap even inside a 512m container!
+
+ENTRYPOINT ["java", "HeapInfo"]

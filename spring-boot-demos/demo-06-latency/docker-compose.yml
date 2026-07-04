@@ -1,0 +1,68 @@
+version: "3.9"
+
+# Demo 06 — Low-Latency JVM: G1GC vs ZGC
+# Same application code, same heap size, different GC algorithm.
+# Run both simultaneously and compare p99 latency under identical load.
+#
+# G1GC app : http://localhost:8080
+# ZGC app  : http://localhost:8081
+# Prometheus: http://localhost:9090
+# Grafana  : http://localhost:3000  (admin / admin)
+
+services:
+
+  # -- G1GC — Default GC, stop-the-world pauses ----------------------------
+  app-g1gc:
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+    image: sb-latency:g1gc
+    container_name: latency-g1gc
+    ports:
+      - "8080:8080"
+    environment:
+      GC_TYPE: g1gc
+    mem_limit: 512m
+    labels:
+      demo: "g1gc"
+
+  # -- ZGC — Concurrent GC, sub-millisecond pauses -------------------------
+  app-zgc:
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+    image: sb-latency:zgc
+    container_name: latency-zgc
+    ports:
+      - "8081:8080"
+    environment:
+      GC_TYPE: zgc
+    mem_limit: 512m
+    labels:
+      demo: "zgc"
+
+  # -- Prometheus — scrapes both apps ---------------------------------------
+  prometheus:
+    image: docker.io/prom/prometheus:v3.2.1
+    container_name: latency-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:Z
+    tmpfs:
+      - /prometheus
+    user: root
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.retention.time=1h'
+
+  # -- Grafana — dashboards -------------------------------------------------
+  grafana:
+    image: docker.io/grafana/grafana:11.6.0
+    container_name: latency-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:Z

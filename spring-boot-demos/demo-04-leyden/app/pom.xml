@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+         https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-parent</artifactId>
+    <version>4.0.5</version>
+    <relativePath/>
+  </parent>
+
+  <groupId>demo</groupId>
+  <artifactId>leyden-demo</artifactId>
+  <version>1.0.0</version>
+  <name>leyden-demo</name>
+  <description>Demo 04: Project Leyden AOT Cache — Spring Boot 4.0.5 / JDK 25</description>
+  <!--
+    Project Leyden AOT Cache — Spring Boot 4.0.5 / JDK 25 LTS
+
+    Unlike Quarkus (one property), Spring Boot needs explicit JVM flags:
+
+      Step 1 — Training run (record class loading):
+        java -XX:AOTMode=record -XX:AOTConfiguration=app.aotconf \
+             -Dspring.context.exit=onRefresh -jar app.jar
+
+      Step 2 — Cache creation (compile ahead-of-time):
+        java -XX:AOTMode=create -XX:AOTConfiguration=app.aotconf \
+             -XX:AOTCache=app.aot -cp app.jar
+
+      Step 3 — Production run (load the cache):
+        java -XX:AOTCache=app.aot -jar app.jar
+
+    JEPs active on JDK 25 LTS:
+      JEP 483 — AOT Class Loading and Linking   (JDK 24+)
+      JEP 514 — AOT Command-Line Ergonomics     (JDK 25 LTS)
+      JEP 515 — AOT Method Profiling            (JDK 25 LTS)
+    JEP 516 (ZGC + AOT cache) requires JDK 26.
+  -->
+
+  <properties>
+    <java.version>25</java.version>
+  </properties>
+
+  <dependencies>
+    <!-- Web layer — loads enough classes to make Leyden impact visible -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+
+    <!-- Actuator — /actuator/health, /actuator/info endpoints -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-actuator</artifactId>
+    </dependency>
+
+    <!-- Cache — @Cacheable loads more classes at startup,
+         making the Leyden AOT cache improvement more visible -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-cache</artifactId>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-maven-plugin</artifactId>
+      </plugin>
+    </plugins>
+  </build>
+</project>

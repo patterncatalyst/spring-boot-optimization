@@ -1,0 +1,45 @@
+title: "Taming the JVM"
+description: "Optimizing Spring Boot Workloads on OpenShift & Kubernetes"
+baseurl: "/spring-boot-optimization"
+url: "https://patterncatalyst.github.io"
+
+repo:     "https://github.com/patterncatalyst/spring-boot-optimization"
+repo_raw: "https://raw.githubusercontent.com/patterncatalyst/spring-boot-optimization/main"
+
+markdown:    kramdown
+highlighter: rouge
+
+kramdown:
+  input: GFM
+  syntax_highlighter: rouge
+  syntax_highlighter_opts:
+    css_class: "highlight"
+
+plugins:
+  - jekyll-feed
+  - jekyll-seo-tag
+
+collections:
+  demos:
+    output: true
+    permalink: /demos/:name/
+  diagrams:
+    output: true
+    permalink: /diagrams/:name/
+
+defaults:
+  - scope: { path: "", type: "demos" }
+    values:  { layout: "demo" }
+  - scope: { path: "", type: "diagrams" }
+    values:  { layout: "diagram" }
+  - scope: { path: "" }
+    values:  { layout: "default" }
+
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - vendor/
+  - spring-boot-demos/
+  - java-openshift-optimization-demos/
+  - "*.zip"
+  - "*.pptx"

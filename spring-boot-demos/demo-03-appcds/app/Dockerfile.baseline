@@ -1,0 +1,24 @@
+# ============================================================
+# Demo 03 — BASELINE (Spring Boot 4.0.5): No AppCDS, no startup tuning
+# This is the "before" image — cold class loading every time
+# ============================================================
+
+FROM registry.access.redhat.com/ubi9/openjdk-21 AS builder
+WORKDIR /build
+COPY pom.xml .
+RUN mvn dependency:resolve --no-transfer-progress -q
+COPY src ./src
+RUN mvn package -DskipTests --no-transfer-progress -q
+
+FROM registry.access.redhat.com/ubi9/openjdk-21-runtime
+WORKDIR /deployments
+COPY --from=builder /build/target/startup-demo-*.jar app.jar
+
+# No AppCDS
+# No class data sharing
+# JVM loads and verifies all classes from scratch on every start
+
+ENV JAVA_OPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
+
+EXPOSE 8080
+ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar /deployments/app.jar"]

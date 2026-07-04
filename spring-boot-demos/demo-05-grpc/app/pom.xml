@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <!-- ──────────────────────────────────────────────────────────────
+       Demo 05: REST vs gRPC — Same Service, Two Protocols
+       Spring Boot 4.0.5 / Java 21
+
+       Spring gRPC (org.springframework.grpc) is the official gRPC
+       integration for Spring Boot 4.0+. It auto-configures a Netty
+       gRPC server alongside the Tomcat REST server so both protocols
+       run in the same JVM.
+
+       Proto compilation:
+         protobuf-maven-plugin (Ascopes) runs protoc + grpc-java
+         codegen at mvn compile, generating MetricsServiceGrpc and
+         all request/response classes from src/main/proto/*.proto.
+       ────────────────────────────────────────────────────────────── -->
+
+  <parent>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-parent</artifactId>
+    <version>4.0.5</version>
+    <relativePath/>
+  </parent>
+
+  <groupId>demo</groupId>
+  <artifactId>grpc-demo</artifactId>
+  <version>1.0.0</version>
+  <name>grpc-demo</name>
+  <description>Demo 05: REST vs gRPC — Spring Boot 4.0.5 / Java 21</description>
+
+  <properties>
+    <java.version>21</java.version>
+    <spring-grpc.version>1.0.3</spring-grpc.version>
+    <protobuf-java.version>4.31.1</protobuf-java.version>
+    <grpc.version>1.72.0</grpc.version>
+  </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <!-- Spring gRPC BOM — manages grpc-* and protobuf versions -->
+      <dependency>
+        <groupId>org.springframework.grpc</groupId>
+        <artifactId>spring-grpc-dependencies</artifactId>
+        <version>${spring-grpc.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <dependencies>
+    <!-- REST — Tomcat on port 8080 for side-by-side comparison -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+
+    <!-- Actuator — /actuator/health for container readiness checks -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-actuator</artifactId>
+    </dependency>
+
+    <!-- Spring gRPC — auto-configures Netty gRPC server on port 9000 -->
+    <dependency>
+      <groupId>org.springframework.grpc</groupId>
+      <artifactId>spring-grpc-spring-boot-starter</artifactId>
+    </dependency>
+
+    <!-- gRPC reflection — lets grpcurl discover services without --proto -->
+    <dependency>
+      <groupId>io.grpc</groupId>
+      <artifactId>grpc-services</artifactId>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <!-- protobuf-maven-plugin (Ascopes) — generates Java stubs from .proto files.
+           Resolves platform-specific protoc binary automatically (no os-maven-plugin needed).
+           Runs protoc + protoc-gen-grpc-java to produce:
+             - MetricsServiceGrpc.MetricsServiceImplBase (service stub)
+             - MetricsRequest, MetricsResponse (message classes)
+           Output: target/generated-sources/protobuf/ -->
+      <plugin>
+        <groupId>io.github.ascopes</groupId>
+        <artifactId>protobuf-maven-plugin</artifactId>
+        <version>5.1.7</version>
+        <configuration>
+          <protocVersion>${protobuf-java.version}</protocVersion>
+          <sourceDirectories>
+            <sourceDirectory>src/main/proto</sourceDirectory>
+          </sourceDirectories>
+          <plugins>
+            <plugin kind="binary-maven">
+              <groupId>io.grpc</groupId>
+              <artifactId>protoc-gen-grpc-java</artifactId>
+              <version>${grpc.version}</version>
+            </plugin>
+          </plugins>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>generate</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-maven-plugin</artifactId>
+      </plugin>
+    </plugins>
+  </build>
+
+</project>

@@ -1,0 +1,63 @@
+# ============================================================
+# Demo 04 LEYDEN: Spring Boot 4.0.5 + Project Leyden AOT Cache
+# JDK 25 LTS -- JEP 483 + JEP 514 + JEP 515
+#
+# 3-stage build:
+#   Stage 1 (compiler): Maven builds the Spring Boot fat JAR
+#   Stage 2 (trainer):  Training run records class loading,
+#                        then creates the AOT cache
+#   Stage 3 (runtime):  Production image with AOT cache
+#
+# Unlike Quarkus (one property), Spring Boot needs explicit steps:
+#   1. java -XX:AOTMode=record ... -jar app.jar    (record)
+#   2. java -XX:AOTMode=create ... -cp app.jar     (create cache)
+#   3. java -XX:AOTCache=app.aot -jar app.jar      (use cache)
+# ============================================================
+
+# -- Stage 1: Compile ---------------------------------------------
+FROM docker.io/library/maven:3.9-eclipse-temurin-25 AS compiler
+WORKDIR /build
+COPY pom.xml .
+COPY src ./src
+RUN mvn package -Dmaven.test.skip=true --no-transfer-progress
+
+# -- Stage 2: Train + Create AOT Cache ----------------------------
+# Full JDK required -- AOT cache creation needs compiler internals
+FROM docker.io/library/eclipse-temurin:25 AS trainer
+WORKDIR /app
+
+COPY --from=compiler /build/target/*.jar app.jar
+
+# Step 1: Training run -- record class loading and JIT profiles
+# -Dspring.context.exit=onRefresh starts the context then exits cleanly
+RUN java -XX:AOTMode=record \
+         -XX:AOTConfiguration=app.aotconf \
+         -Dspring.context.exit=onRefresh \
+         -jar app.jar || true && \
+    echo "=== Training complete ===" && \
+    ls -lh app.aotconf && \
+    test -s app.aotconf || (echo "app.aotconf missing or empty" && exit 1)
+
+# Step 2: Create the AOT cache from the training data
+RUN java -XX:AOTMode=create \
+         -XX:AOTConfiguration=app.aotconf \
+         -XX:AOTCache=app.aot \
+         -cp app.jar || true && \
+    echo "=== Cache creation complete ===" && \
+    ls -lh app.aot && \
+    test -s app.aot || (echo "app.aot missing or empty" && exit 1) && \
+    echo "app.aot: $(ls -lh app.aot | awk '{print $5}')"
+
+# -- Stage 3: Runtime with AOT Cache ------------------------------
+FROM docker.io/library/eclipse-temurin:25-jre
+WORKDIR /app
+
+COPY --from=trainer /app/app.jar app.jar
+COPY --from=trainer /app/app.aot app.aot
+
+ENV JAVA_OPTS="-XX:+UseContainerSupport \
+               -XX:MaxRAMPercentage=75.0 \
+               -XX:+UseG1GC"
+
+EXPOSE 8080
+ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -XX:AOTCache=/app/app.aot -jar app.jar"]

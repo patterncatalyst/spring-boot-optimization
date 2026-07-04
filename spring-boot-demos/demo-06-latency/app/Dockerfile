@@ -1,0 +1,41 @@
+# Demo 06 — Low-Latency JVM: G1GC vs ZGC
+# This same Dockerfile is used for both images.
+# The GC algorithm is selected at runtime via the GC_TYPE env var.
+#
+# G1GC:       GC_TYPE=g1gc       (default)
+# ZGC:        GC_TYPE=zgc
+# Shenandoah: GC_TYPE=shenandoah
+
+FROM registry.access.redhat.com/ubi9/openjdk-21 AS builder
+WORKDIR /build
+COPY pom.xml .
+RUN mvn dependency:resolve --no-transfer-progress -q
+COPY src ./src
+RUN mvn package -DskipTests --no-transfer-progress -q
+
+FROM registry.access.redhat.com/ubi9/openjdk-21-runtime
+WORKDIR /deployments
+COPY --from=builder /build/target/latency-demo-*.jar app.jar
+
+# Default GC algorithm — overridden per-container in docker-compose.yml
+ENV GC_TYPE=g1gc
+
+# Shared flags: container support, explicit thread counts, pre-touch heap
+ENV JAVA_OPTS_SHARED="-XX:+UseContainerSupport \
+  -XX:MaxRAMPercentage=75.0 \
+  -XX:ActiveProcessorCount=2 \
+  -XX:ParallelGCThreads=2 \
+  -XX:ConcGCThreads=1 \
+  -XX:CICompilerCount=2 \
+  -XX:+AlwaysPreTouch"
+
+EXPOSE 8080
+
+ENTRYPOINT ["sh", "-c", "\
+  case $GC_TYPE in \
+    g1gc)       flags='-XX:+UseG1GC -XX:MaxGCPauseMillis=200' ;; \
+    zgc)        flags='-XX:+UseZGC -XX:+ZGenerational' ;; \
+    shenandoah) flags='-XX:+UseShenandoahGC' ;; \
+    *)          flags='-XX:+UseG1GC -XX:MaxGCPauseMillis=200' ;; \
+  esac; \
+  exec java $JAVA_OPTS_SHARED $flags -jar /deployments/app.jar"]

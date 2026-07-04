@@ -1,0 +1,39 @@
+# Jekyll
+_site/
+.sass-cache/
+.jekyll-cache/
+.jekyll-metadata
+vendor/
+
+# Ruby
+Gemfile.lock
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Claude
+.claude/
+
+# Original source files (kept locally, not committed)
+*.pptx
+!presentation/*.pptx
+*.zip
+java-openshift-optimization-demos/
+
+# Java build artifacts
+target/
+*.class
+*.jar
+!spring-boot-demos/**/src/**/*.jar
+
+# Node
+node_modules/

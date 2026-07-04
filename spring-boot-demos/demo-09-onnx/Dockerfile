@@ -1,0 +1,24 @@
+# Demo 09 — Spring Boot + LangChain4j ONNX + Panama on JDK 25
+# The all-MiniLM-L6-v2 model is bundled inside the Maven dependency.
+# ONNX Runtime uses Panama FFM to call native inference kernels.
+# No Python sidecar. No external model download.
+
+FROM eclipse-temurin:25 AS builder
+WORKDIR /build
+COPY app/pom.xml .
+COPY app/src ./src
+RUN --mount=type=cache,target=/root/.m2 \
+    mvn package -Dmaven.test.skip=true --no-transfer-progress \
+      -f pom.xml
+
+FROM eclipse-temurin:25-jre
+WORKDIR /app
+
+COPY --from=builder /build/target/onnx-demo-*.jar app.jar
+
+# ONNX Runtime + model require ~225MB overhead beyond heap
+# Recommend 1GB container limit: 75% -> ~768MB heap + ~256MB for ONNX native libs
+ENV JAVA_OPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
+
+EXPOSE 8080
+ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar /app/app.jar"]

@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+         https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-parent</artifactId>
+    <version>4.0.5</version>
+    <relativePath/>
+  </parent>
+
+  <groupId>demo</groupId>
+  <artifactId>panama-demo</artifactId>
+  <version>1.0.0</version>
+  <name>panama-demo</name>
+  <description>Demo 08: Project Panama FFM — C++20 native library via Spring Boot 4.0.5 / JDK 25</description>
+  <!--
+    Project Panama Foreign Function & Memory API — Spring Boot 4.0.5 / JDK 25 LTS
+
+    Calls a C++20 shared library (libjvmstats.so) from pure Java via
+    Panama FFM — no JNI wrapper code, no C header translations.
+
+    The native library is compiled in a separate Dockerfile stage (UBI9 + gcc-c++)
+    and loaded at runtime via SymbolLookup.libraryLookup().
+
+    JEP 454 — Foreign Function & Memory API (finalized JDK 22, stable JDK 25)
+  -->
+
+  <properties>
+    <java.version>25</java.version>
+  </properties>
+
+  <dependencies>
+    <!-- Web layer — REST endpoints for the Panama demo -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+
+    <!-- Actuator — /actuator/health for readiness probes -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-actuator</artifactId>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-maven-plugin</artifactId>
+      </plugin>
+    </plugins>
+  </build>
+</project>

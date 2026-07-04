@@ -585,6 +585,7 @@ management.metrics.tags.application=\
     <pre style="font-size:0.55em;max-width:500px;margin:0 auto;"><code>cd demo-02-gc-monitoring
 ./demo.sh   # starts podman-compose stack</code></pre>
   </div>
+  <aside class="notes">Demo 02 brings in the full Grafana LGTM stack. Key moment: show the GC pause histogram panel — without the percentiles-histogram property it's blank, and that's the most common misconfiguration. Generate pressure with the /allocate endpoint and watch G1GC vs ZGC pauses in real time. End with the virtual threads demo: 500 concurrent tasks, only a handful of platform threads.</aside>
 </section>
 
 <section data-background-color="#08111F">
@@ -739,6 +740,7 @@ ENTRYPOINT ["java", "-XX:AOTCache=app.aot",
     <pre style="font-size:0.55em;max-width:500px;margin:0 auto;"><code>cd demo-04-leyden
 ./demo.sh   # JDK 25 required (in container)</code></pre>
   </div>
+  <aside class="notes">This is a JDK 25 preview of what's coming. Unlike Quarkus which has a single property toggle, Spring Boot requires the explicit two-step workflow: record the profile, then create the AOT cache. The output is an app.aot file that sits alongside the JAR. Show the 3-stage Dockerfile — the training stage is the key insight. Expected improvement is 40-55% beyond baseline, stacking on top of AppCDS gains.</aside>
 </section>
 
 <!-- ══════════════════════════════════════════════════════════════════ -->
@@ -847,6 +849,7 @@ server.port=8080</code></pre>
     <pre style="font-size:0.55em;max-width:500px;margin:0 auto;"><code>cd demo-05-grpc
 ./demo.sh</code></pre>
   </div>
+  <aside class="notes">Important caveat for this demo: on localhost, gRPC unary will actually be SLOWER than REST because network serialization cost is zero and HTTP/2 has higher setup overhead. The win shows at high concurrency (c=500) and with streaming. Focus the audience on the wire size difference — JSON ~400 bytes vs Protobuf ~40 bytes — that's the real win for inter-service communication inside a cluster. Spring Boot 4.0 makes gRPC first-class with the spring-grpc starter.</aside>
 </section>
 
 <!-- ══════════════════════════════════════════════════════════════════ -->
@@ -956,6 +959,7 @@ server.port=8080</code></pre>
     <pre style="font-size:0.55em;max-width:500px;margin:0 auto;"><code>cd demo-07-rightsizing
 python3 analyze.py</code></pre>
   </div>
+  <aside class="notes">This is the money slide — literally. The Python script analyzes 7 real workload profiles and generates specific Kubernetes resource recommendations with confidence intervals. Before: 4 nodes, after: 2 nodes. $6,720/month savings. The audience takeaway: one afternoon of measurement can save $80K/year per cluster. No containers needed for this demo, just Python — it's analysis, not infrastructure.</aside>
 </section>
 
 <!-- ══════════════════════════════════════════════════════════════════ -->
@@ -1059,6 +1063,7 @@ ENTRYPOINT ["java", "-jar", "app.jar"]</code></pre>
     <pre style="font-size:0.55em;max-width:500px;margin:0 auto;"><code>cd demo-08-panama
 ./demo.sh</code></pre>
   </div>
+  <aside class="notes">Panama FFM replaces JNI entirely — no javah, no native headers, no JNI_OnLoad. The key concept is Arena-managed memory: allocate native memory, call into C++, and the Arena closes automatically — zero leak by construction. The 3-stage Dockerfile is interesting here: first stage compiles C++ on UBI9, second stage compiles Java on Temurin 25, third stage is a minimal JRE. Show the REST endpoints that expose native computation results like P99 and standard deviation calculated in C++.</aside>
 </section>
 
 <!-- ══════════════════════════════════════════════════════════════════ -->
@@ -1131,6 +1136,7 @@ public class OnnxController {
     <pre style="font-size:0.55em;max-width:500px;margin:0 auto;"><code>cd demo-09-onnx
 ./demo.sh</code></pre>
   </div>
+  <aside class="notes">The punchline here: AI inference as a single Spring Boot deployment unit with no GPU and no Python sidecar. LangChain4j plus ONNX Runtime bundles the MiniLM-L6-v2 model directly in the Maven dependency. Key sizing detail: the ONNX model loads ~100MB into native memory, so you need to reduce MaxRAMPercentage to 65% to leave room. Show the /benchmark endpoint — ~30ms per embedding on CPU. This is practical for semantic search, classification, and RAG retrieval without a separate inference service.</aside>
 </section>
 
 <!-- ══════════════════════════════════════════════════════════════════ -->

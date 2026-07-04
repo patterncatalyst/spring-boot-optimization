@@ -25,9 +25,17 @@ Thumbs.db
 
 # Original source files (kept locally, not committed)
 *.pptx
-!presentation/*.pptx
+!presentation/java-openshift-optimization.pptx
 *.zip
 java-openshift-optimization-demos/
+
+# Presentation build tooling (deck.js generates the pptx)
+presentation/node_modules/
+presentation/package.json
+presentation/package-lock.json
+presentation/png/
+presentation/assets/
+presentation/deck-helpers.js
 
 # Java build artifacts
 target/

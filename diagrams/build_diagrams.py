@@ -424,6 +424,53 @@ def diagram_10():
 # Generate all diagrams
 # ═══════════════════════════════════════════════════════════════════
 if __name__ == "__main__":
+    light_mode = "--light" in sys.argv
+
+    if light_mode:
+        # Light palette for pptx (white slide backgrounds).  Keeps the same
+        # semantic hue per style but swaps dark fills for light washes and
+        # inverts text from white-on-dark to dark-on-white.
+        CYAN   = "#EE0000"     # diagram title → Red Hat red accent
+        GREEN  = "#27AE60"
+        RED    = "#E84855"
+        AMBER  = "#F5A623"
+        BLUE   = "#0066CC"     # match deck svc color
+        PURPLE = "#6A1B9A"     # match deck data color
+        GREY   = "#5A5A5A"     # subtitle → deck caption
+        WHITE  = "#151515"     # text → deck ink
+        DARK_BG    = "#FFFFFF"
+        PANEL_BG   = "#FFFFFF"
+        BORDER     = "#D2D2D2"
+        DARK_FILL  = "#F8F8F8"
+        GREEN_FILL = "#F0FAF5"
+        RED_FILL   = "#FEF5F5"
+        BLUE_FILL  = "#EEF4FB"
+        PURPLE_FILL = "#F5EFF8"
+        AMBER_FILL = "#FFF8EF"
+
+        g.STYLES = {
+            "box":    ("#FFFFFF", "#242424"),
+            "sub":    ("#FFFFFF", "#999999"),
+            "accent": ("#FFF8EF", AMBER),
+            "kernel": ("#F4F4F4", "#888888"),
+            "user":   ("#EEF4FB", BLUE),
+            "ghost":  ("#FFFFFF", "#999999"),
+            "ink":    ("#151515", "#151515"),
+            "green":  (GREEN_FILL, GREEN),
+            "red":    (RED_FILL, RED),
+            "purple": (PURPLE_FILL, PURPLE),
+        }
+        g.INK   = "#151515"
+        g.GREY  = "#5A5A5A"
+        g.AMBER = "#b8650a"
+
+        def patch_dark_theme(_name):
+            pass
+
+        import tempfile, subprocess, shutil
+        light_dir = tempfile.mkdtemp(prefix="diagrams-light-")
+        g.OUT = light_dir
+
     diagram_01()
     diagram_02()
     diagram_03()
@@ -434,4 +481,21 @@ if __name__ == "__main__":
     diagram_08()
     diagram_09()
     diagram_10()
-    print("All 10 diagrams generated.")
+
+    if light_mode:
+        png_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                               "..", "presentation", "png")
+        os.makedirs(png_dir, exist_ok=True)
+        for f in sorted(os.listdir(light_dir)):
+            if f.endswith(".svg"):
+                name = f[:-4]
+                subprocess.run([
+                    "magick", "-density", "192", "-background", "white",
+                    os.path.join(light_dir, f), "-flatten",
+                    os.path.join(png_dir, f"{name}.png"),
+                ], check=True)
+                print(f"  {name}.png")
+        shutil.rmtree(light_dir)
+        print(f"\nLight PNGs written to {png_dir}")
+    else:
+        print("All 10 diagrams generated.")

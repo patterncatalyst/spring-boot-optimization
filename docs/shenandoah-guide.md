@@ -16,8 +16,8 @@ description: "Red Hat default GC for UBI9 OpenJDK images - comparison with G1GC 
     <div>
       <h1>Shenandoah GC Guide</h1>
       <p style="color:var(--muted);margin-top:.4rem;">
-        Red Hat's concurrent low-latency GC — the default on every
-        <code>ubi9/openjdk-21-runtime</code> and <code>ubi9/openjdk-25-runtime</code> image.
+        Red Hat's concurrent low-latency GC — available on Red Hat OpenJDK builds
+        including <code>ubi9/openjdk-21-runtime</code> and <code>ubi9/openjdk-25-runtime</code> images.
       </p>
     </div>
     <a href="{{ site.repo }}/blob/main/spring-boot-demos/SHENANDOAH-GC-GUIDE.md"
@@ -25,8 +25,8 @@ description: "Red Hat default GC for UBI9 OpenJDK images - comparison with G1GC 
   </div>
 
   <div class="callout">
-    <strong>If you're on OpenShift using UBI9:</strong> you're already running Shenandoah (1-20ms
-    pauses) without any configuration. Demos 02 and 06 explicitly override it with
+    <strong>If you're on OpenShift using UBI9:</strong> Shenandoah is available in Red Hat OpenJDK
+    builds (1-20ms pauses) — opt in with <code>-XX:+UseShenandoahGC</code>. Demos 02 and 06 explicitly override it with
     <code>-XX:+UseG1GC</code> and <code>-XX:+UseZGC</code> for a clean comparison.
   </div>
 
@@ -62,7 +62,7 @@ description: "Red Hat default GC for UBI9 OpenJDK images - comparison with G1GC 
     <div class="card" style="pointer-events:none;">
       <h3 style="color:var(--teal);">Choose Shenandoah when...</h3>
       <ul style="color:var(--muted);font-size:.875rem;line-height:1.8;margin-left:1.2rem;">
-        <li>Deploying on OpenShift / UBI9 — already your default</li>
+        <li>Deploying on OpenShift / UBI9 — available in Red Hat builds</li>
         <li>p99 SLA between 20ms and 100ms</li>
         <li>Medium to large heaps (4GB-100GB)</li>
         <li>JDK 8+ support needed (Red Hat builds)</li>

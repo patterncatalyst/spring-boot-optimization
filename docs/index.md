@@ -48,7 +48,7 @@ title: Documentation
     <a href="{{ '/docs/shenandoah-guide/' | relative_url }}" class="doc-card">
       <div class="doc-card-icon">♻️</div>
       <h3>Shenandoah GC Guide</h3>
-      <p>Why UBI9 defaults to Shenandoah, Brooks pointers, three-way comparison with G1GC and ZGC, DegeneratedGC explained.</p>
+      <p>Shenandoah on Red Hat OpenJDK builds, Brooks pointers, three-way comparison with G1GC and ZGC, DegeneratedGC explained.</p>
       <span class="tag tag-teal">SHENANDOAH-GC-GUIDE.md</span>
     </a>
 
@@ -86,13 +86,6 @@ title: Documentation
       <div class="doc-card-icon">🖼</div>
       <h3>Interactive Diagram Viewer</h3>
       <p>Browse and view all 10 Excalidraw diagrams in-browser. Download files or open directly in excalidraw.com.</p>
-      <span class="tag tag-green">Interactive →</span>
-    </a>
-
-    <a href="{{ '/presentation/' | relative_url }}" class="doc-card">
-      <div class="doc-card-icon">📊</div>
-      <h3>Reveal.js Slides</h3>
-      <p>All 54 slides in browser-native Reveal.js. Press S for speaker notes, press O for overview mode.</p>
       <span class="tag tag-green">Interactive →</span>
     </a>
 

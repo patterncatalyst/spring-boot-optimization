@@ -336,7 +336,7 @@ title: "Taming the JVM: Optimizing Spring Boot Workloads on OpenShift & Kubernet
       <tr>
         <td><strong style="color:#E84855;">Shenandoah</strong></td>
         <td>1–20ms</td>
-        <td><strong style="color:#E84855;">UBI9 default</strong> — Red Hat images ship this</td>
+        <td>Available on UBI9 / Red Hat OpenJDK builds</td>
         <td><code>-XX:+UseShenandoahGC</code></td>
       </tr>
       <tr>
@@ -354,14 +354,14 @@ title: "Taming the JVM: Optimizing Spring Boot Workloads on OpenShift & Kubernet
     </tbody>
   </table>
   <div class="callout" style="font-size:0.58em;margin-top:0.75em;">
-    <strong>Note:</strong> UBI9 ships Shenandoah. Demos 02 and 06 override to <code>-XX:+UseG1GC</code> / <code>-XX:+UseZGC</code> for clean comparison.
+    <strong>Note:</strong> G1GC is the default on all JDK distributions. Shenandoah is available on Red Hat OpenJDK builds (UBI9). Demos use G1GC and ZGC for comparison.
   </div>
   <aside class="notes">
     Walk through the table row by row. Each collector has a clear use case:
 
     G1GC (50-300ms): the default on Temurin and Corretto images. Good general-purpose collector. Tunable via MaxGCPauseMillis. Best for workloads that can tolerate occasional 200-300ms pauses.
 
-    Shenandoah (1-20ms): this is what UBI9 ships. If you're running Red Hat images, you're already using Shenandoah unless you explicitly override. Uses Brooks pointers for concurrent compaction — lower pause than G1GC but slightly more CPU overhead. Demos 02 and 06 override to G1GC/ZGC for clean comparison.
+    Shenandoah (1-20ms): available on Red Hat OpenJDK builds (UBI9 images). G1GC is still the default — you opt in to Shenandoah with -XX:+UseShenandoahGC. Uses Brooks pointers for concurrent compaction — lower pause than G1GC but slightly more CPU overhead. Good middle ground between G1GC and ZGC.
 
     ZGC Generational (sub-1ms): the low-latency option. Pauses are constant regardless of heap size — a 4GB heap and a 64GB heap have the same sub-millisecond pause. The trade-off is a load barrier on every object reference (~5-15% throughput cost). Best for latency-sensitive APIs where P99 matters more than throughput.
 

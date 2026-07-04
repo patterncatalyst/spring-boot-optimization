@@ -19,7 +19,6 @@
     </a>
     <nav class="site-nav">
       <a href="{{ '/demos/' | relative_url }}"        {% if page.url contains '/demos/'        %}class="active"{% endif %}>Demos</a>
-      <a href="{{ '/presentation/' | relative_url }}" {% if page.url contains '/presentation/' %}class="active"{% endif %}>Slides</a>
       <a href="{{ '/diagrams/' | relative_url }}"     {% if page.url contains '/diagrams/'     %}class="active"{% endif %}>Diagrams</a>
       <a href="{{ '/docs/' | relative_url }}"         {% if page.url contains '/docs/'         %}class="active"{% endif %}>Docs</a>
       <a href="{{ site.repo }}" class="gh-btn" target="_blank" rel="noopener">
@@ -49,7 +48,6 @@
         <h4>Links</h4>
         <ul>
           <li><a href="{{ site.repo }}" target="_blank">GitHub Repository</a></li>
-          <li><a href="{{ '/presentation/' | relative_url }}">Reveal.js Slides</a></li>
           <li><a href="{{ '/demos/' | relative_url }}">All Demos</a></li>
           <li><a href="{{ '/docs/' | relative_url }}">Reference Docs</a></li>
         </ul>

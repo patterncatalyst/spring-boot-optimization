@@ -27,7 +27,7 @@ title: Documentation
     <a href="{{ '/docs/apply-to-your-app/' | relative_url }}" class="doc-card">
       <div class="doc-card-icon">🔨</div>
       <h3>Apply to Your App</h3>
-      <p>7-step checklist to bring these optimizations to your existing Spring Boot applications. ~4 hours per service.</p>
+      <p>8-step checklist to bring these optimizations to your existing Spring Boot applications. ~4 hours per service.</p>
       <span class="tag tag-green">Tutorial →</span>
     </a>
 
@@ -52,7 +52,8 @@ title: Documentation
       <span class="tag tag-teal">SHENANDOAH-GC-GUIDE.md</span>
     </a>
 
-    <a href="{{ '/docs/presenter-guide/' | relative_url }}" class="doc-card">
+    <a href="{{ site.repo }}/blob/main/presentation/PRESENTER-GUIDE.md"
+       target="_blank" class="doc-card">
       <div class="doc-card-icon">🎤</div>
       <h3>Presenter Guide</h3>
       <p>Slide-by-slide speaker notes for all 54 slides, timing reference, day-before checklist, demo troubleshooting.</p>
@@ -66,26 +67,10 @@ title: Documentation
       <span class="tag tag-teal">DEMO-PREREQUISITES.md</span>
     </a>
 
-    <a href="{{ site.repo }}/blob/main/diagrams/DIAGRAM-SPEAKER-NOTES.md"
-       target="_blank" class="doc-card">
-      <div class="doc-card-icon">📐</div>
-      <h3>Diagram Speaker Notes</h3>
-      <p>Speaker notes and slide placement for all 10 Excalidraw diagrams. Walk-through timing, whiteboard guidance.</p>
-      <span class="tag tag-teal">DIAGRAM-SPEAKER-NOTES.md</span>
-    </a>
-
-    <a href="{{ site.repo }}/blob/main/diagrams/DIAGRAM-SPEAKER-NOTES-ANTI-PATTERNS.md"
-       target="_blank" class="doc-card">
-      <div class="doc-card-icon">🚫</div>
-      <h3>Anti-Patterns Diagram Notes</h3>
-      <p>Extended speaker notes for the 16-pattern anti-patterns diagram. Row-by-row walk-through with priority ordering.</p>
-      <span class="tag tag-teal">DIAGRAM-SPEAKER-NOTES-ANTI-PATTERNS.md</span>
-    </a>
-
     <a href="{{ '/diagrams/' | relative_url }}" class="doc-card">
       <div class="doc-card-icon">🖼</div>
       <h3>Interactive Diagram Viewer</h3>
-      <p>Browse and view all 10 Excalidraw diagrams in-browser. Download files or open directly in excalidraw.com.</p>
+      <p>Browse and view all 12 Excalidraw diagrams in-browser. Download files or open directly in excalidraw.com.</p>
       <span class="tag tag-green">Interactive →</span>
     </a>
 

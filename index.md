@@ -19,7 +19,6 @@ title: Home
     </div>
     <div class="hero-actions">
       <a href="{{ '/demos/' | relative_url }}" class="btn btn-primary">Explore Demos →</a>
-      <a href="{{ '/presentation/' | relative_url }}" class="btn btn-secondary">View Slides</a>
       <a href="{{ site.repo }}" class="btn btn-outline" target="_blank">GitHub ↗</a>
     </div>
   </div>
@@ -116,7 +115,8 @@ title: Home
         <h3>Shenandoah GC Guide</h3>
         <p>Why UBI9 defaults to Shenandoah, how Brooks pointers work, three-way comparison with G1GC and ZGC.</p>
       </a>
-      <a href="{{ '/docs/presenter-guide/' | relative_url }}" class="doc-card">
+      <a href="{{ site.repo }}/blob/main/presentation/PRESENTER-GUIDE.md"
+         target="_blank" class="doc-card">
         <div class="doc-card-icon">🎤</div>
         <h3>Presenter Guide</h3>
         <p>Slide-by-slide notes for all 54 slides, timing reference, demo troubleshooting, prep checklist.</p>
@@ -129,7 +129,7 @@ title: Home
       <a href="{{ '/diagrams/' | relative_url }}" class="doc-card">
         <div class="doc-card-icon">📐</div>
         <h3>Excalidraw Diagrams</h3>
-        <p>10 architecture and flow diagrams — interactive viewer, speaker notes, and download links.</p>
+        <p>12 architecture and flow diagrams — interactive viewer, speaker notes, and download links.</p>
       </a>
     </div>
   </div>

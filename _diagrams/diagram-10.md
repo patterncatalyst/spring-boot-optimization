@@ -6,8 +6,8 @@ slide_ref: "34-36"
 description: "Java → Arena → MemorySegment → MethodHandle → Native C++ — zero-leak by construction."
 prev_url: "/diagrams/diagram-09/"
 prev_title: "Observability Stack"
-next_url: ""
-next_title: ""
+next_url: "/diagrams/diagram-11/"
+next_title: "G1GC vs ZGC Pause Behavior"
 ---
 
 **Walk-through:** The flow starts at a Spring `@RestController` endpoint, opens a confined `Arena` for scoped native memory, allocates a `MemorySegment`, looks up the native function via `SymbolLookup`, and invokes it through a `MethodHandle`. The result is written back to a MemorySegment. When `Arena.close()` is called (via try-with-resources), all native memory is freed — zero leaks possible.

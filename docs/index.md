@@ -56,7 +56,7 @@ title: Documentation
        target="_blank" class="doc-card">
       <div class="doc-card-icon">🎤</div>
       <h3>Presenter Guide</h3>
-      <p>Slide-by-slide speaker notes for all 54 slides, timing reference, day-before checklist, demo troubleshooting.</p>
+      <p>Slide-by-slide speaker notes for all 44 slides, timing reference, day-before checklist, demo troubleshooting.</p>
       <span class="tag tag-teal">PRESENTER-GUIDE.md</span>
     </a>
 

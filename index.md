@@ -6,7 +6,7 @@ title: Home
 <div class="hero">
   <div class="container">
     <h1>Taming the <span>JVM</span></h1>
-    <p class="subtitle">Optimizing Spring Boot Workloads on OpenShift &amp; Kubernetes — 9 live demos, 54 slides, real metrics and honest benchmark results.</p>
+    <p class="subtitle">Optimizing Spring Boot Workloads on OpenShift &amp; Kubernetes — 9 live demos, 44 slides, real metrics and honest benchmark results.</p>
     <div class="tech-stack">
       <span class="pill">Spring Boot 4.0.5</span>
       <span class="pill">Java 21 &amp; 25</span>
@@ -28,7 +28,7 @@ title: Home
 
   <div class="stats">
     <div class="stat"><div class="stat-val">9</div><div class="stat-lbl">Live Demos</div></div>
-    <div class="stat"><div class="stat-val">54</div><div class="stat-lbl">Slides</div></div>
+    <div class="stat"><div class="stat-val">44</div><div class="stat-lbl">Slides</div></div>
     <div class="stat"><div class="stat-val">−55%</div><div class="stat-lbl">Startup (AppCDS)</div></div>
     <div class="stat"><div class="stat-val">$80k+</div><div class="stat-lbl">Annual Savings Shown</div></div>
     <div class="stat"><div class="stat-val">&lt;1ms</div><div class="stat-lbl">ZGC Pause Target</div></div>
@@ -119,7 +119,7 @@ title: Home
          target="_blank" class="doc-card">
         <div class="doc-card-icon">🎤</div>
         <h3>Presenter Guide</h3>
-        <p>Slide-by-slide notes for all 54 slides, timing reference, demo troubleshooting, prep checklist.</p>
+        <p>Slide-by-slide notes for all 44 slides, timing reference, demo troubleshooting, prep checklist.</p>
       </a>
       <a href="{{ '/docs/prerequisites/' | relative_url }}" class="doc-card">
         <div class="doc-card-icon">🔧</div>

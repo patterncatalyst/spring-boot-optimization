@@ -110,6 +110,10 @@ ENTRYPOINT ["java",
        target="_blank" class="tag tag-teal" style="display:block;padding:.55rem .85rem;font-size:.82rem;text-align:center;">
       Common Pitfalls
     </a>
+    <a href="{{ '/docs/apply-to-your-app/#step-8' | relative_url }}"
+       class="tag tag-teal" style="display:block;padding:.55rem .85rem;font-size:.82rem;text-align:center;">
+      Graceful Shutdown &amp; Health Probes
+    </a>
 
   </div>
 

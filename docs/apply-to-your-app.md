@@ -211,6 +211,83 @@ ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -Xshare:on \
 
   <p style="color:var(--muted);">Scale on RPS, not CPU. GC pauses create CPU spikes that trigger false scale-out events. The 120-second stabilization window absorbs GC transients.</p>
 
+  <!-- ═══════ STEP 8 ═══════ -->
+  <h2 id="step-8" style="color:var(--teal);margin-top:2rem;">
+    Step 8: Configure Lifecycle &amp; Health Probes (15 minutes)
+  </h2>
+
+  <div class="run-box">
+    <div class="run-box-header">application.properties</div>
+    <pre><code># Graceful shutdown — drain in-flight requests before stopping
+server.shutdown=graceful
+spring.lifecycle.timeout-per-shutdown-phase=30s</code></pre>
+  </div>
+
+  <div class="run-box" style="margin-top:1rem;">
+    <div class="run-box-header">deployment.yaml — pod spec</div>
+    <pre><code>spec:
+  terminationGracePeriodSeconds: 40  # Must exceed shutdown timeout (30s)
+  containers:
+  - name: app
+    lifecycle:
+      preStop:
+        exec:
+          command: ["sleep", "5"]  # Let LB drain before SIGTERM
+    startupProbe:
+      httpGet:
+        path: /actuator/health/liveness
+        port: 8080
+      failureThreshold: 30   # 30 × 2s = 60s for JVM startup
+      periodSeconds: 2
+    livenessProbe:
+      httpGet:
+        path: /actuator/health/liveness
+        port: 8080
+      periodSeconds: 10
+    readinessProbe:
+      httpGet:
+        path: /actuator/health/readiness
+        port: 8080
+      periodSeconds: 5</code></pre>
+  </div>
+
+  <h4>Verify</h4>
+  <div class="run-box">
+    <div class="run-box-header">bash</div>
+    <pre><code>kubectl describe pod &lt;pod-name&gt; | grep -A 5 "Liveness\|Readiness\|Startup"</code></pre>
+  </div>
+
+  <p style="color:var(--muted);">
+    <strong>Why startupProbe?</strong> Without it, livenessProbe runs from second zero — the JVM is still loading 12,000 classes and liveness kills it at second 3. CrashLoopBackOff from a health check, not from a bug.<br>
+    <strong>Why preStop sleep(5)?</strong> Kubernetes sends SIGTERM and removes the pod from endpoints simultaneously, but endpoint removal takes 1-5s to propagate. The sleep delays SIGTERM so the load balancer stops sending traffic before Spring Boot starts shutting down.
+  </p>
+
+  <div class="callout" style="margin:1.5rem 0;">
+    <strong>Pro Tip — Active JVM Warmup:</strong> A pod that passes its startupProbe isn't necessarily
+    ready to handle traffic at full speed. The JIT hasn't compiled hot paths, connection pools
+    aren't established, and caches are cold. Create a custom <code>HealthIndicator</code> that performs
+    active warmup (invoking key endpoints, loading caches) before reporting UP. Include it in the
+    readiness health group:
+  </div>
+
+  <div class="run-box">
+    <div class="run-box-header">application.properties — warmup readiness gate</div>
+    <pre><code># Include custom warmup indicator in readiness group
+management.endpoint.health.group.readiness.include=applicationWarmup
+management.endpoint.health.group.readiness.show-details=always</code></pre>
+  </div>
+
+  <p style="color:var(--muted);margin-top:.5rem;">
+    The <code>ApplicationWarmup</code> component implements <code>HealthIndicator</code> and
+    <code>ApplicationListener&lt;ApplicationReadyEvent&gt;</code>. It reports <code>DOWN</code>
+    until <code>performWarmup()</code> completes (invokes internal endpoints via <code>RestClient</code>),
+    then reports <code>UP</code>. The readinessProbe won't pass until warmup is done —
+    Kubernetes won't route traffic until the JVM is actually warm.<br><br>
+    <strong>Startup resource spike:</strong> A fresh JVM needs 2-4× more CPU during class loading
+    and JIT compilation than at steady state. Consider Google's open-source
+    <code>kube-startup-cpu-boost</code> to grant temporary extra CPU during startup.
+  </p>
+
   <!-- ═══════ CHECKLIST ═══════ -->
   <h2 id="checklist" style="color:var(--teal);margin-top:2rem;border-top:1px solid var(--border);padding-top:1.5rem;">
     Quick Checklist
@@ -228,11 +305,12 @@ ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -Xshare:on \
       <tr><td>AppCDS 3-stage Containerfile</td><td>2 hrs</td><td>35-55% faster startup</td><td>No</td></tr>
       <tr><td>Right-size resources</td><td>1 hr</td><td>40-60% memory savings</td><td>No</td></tr>
       <tr><td>HPA on RPS</td><td>30 min</td><td>Eliminates GC thrash</td><td>No</td></tr>
+      <tr><td>Graceful shutdown + health probes</td><td>15 min</td><td>Zero-downtime deploys</td><td>2 props + YAML</td></tr>
     </tbody>
   </table>
 
   <div class="callout" style="margin:1.5rem 0;">
-    <strong>Order matters:</strong> Fix memory first (Step 1), add observability second (Step 2), then tune based on data (Steps 3-7). Never tune without a baseline.
+    <strong>Order matters:</strong> Fix memory first (Step 1), add observability second (Step 2), then tune based on data (Steps 3-7). Step 8 (lifecycle) can be done in parallel with any other step. Never tune without a baseline.
   </div>
 
   <div style="margin-top:1.5rem;">

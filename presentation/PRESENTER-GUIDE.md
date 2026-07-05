@@ -109,6 +109,16 @@
 - Walk through the sizing rules slowly
 - Stress the `jcmd VM.native_memory summary` command — it's the ground truth
 
+**Resource redistribution (from Bruno Borges, InfoQ Dev Summit):**
+> "Borges showed that consolidating from 6 small replicas to 2 larger replicas
+> (6 CPU → 4 CPU, 6GB → 4GB) improved BOTH throughput AND latency. Fewer,
+> better-resourced JVMs outperform many starved ones."
+
+**Startup resource spike:**
+> "A fresh JVM needs 2-4× more CPU than at steady state — class loading, JIT,
+> and Spring auto-config all spike simultaneously. This is why CPU limits should
+> be 2-4× requests. The burst headroom absorbs both GC spikes AND startup spikes."
+
 ---
 
 ### SLIDE 7 — Pod Bin-Packing (12:00–14:00)
@@ -132,6 +142,11 @@
 > that needs 3.
 > The fix involves both GC tuning AND HPA configuration — we cover both."
 
+**ActiveProcessorCount tip:**
+> "For I/O-bound microservices, `-XX:ActiveProcessorCount=N` overrides the JVM's
+> detected processor count. You can get a larger thread pool despite a low CPU limit.
+> But use carefully — GC threads also scale with this."
+
 ---
 
 ### SLIDE 9 — GC Selection Guide (16:00–18:00)
@@ -145,6 +160,10 @@
 **Decision rule:**
 > "If your P99 GC pause from Prometheus is > 500ms consistently → switch from G1 to ZGC.
 > If P99 is < 200ms, G1 is fine — don't change what's working."
+
+**GC threshold fun fact (from Bruno Borges, Microsoft):**
+> "The JVM's auto-selection is hardcoded: 2 CPUs + 1792MB → G1GC, but 2 CPUs + 1791MB
+> → Serial GC. One megabyte difference. Always set the GC explicitly."
 
 ---
 
@@ -224,9 +243,68 @@
 2. stabilizationWindowSeconds: 120 — "longer than any normal GC pause"
 3. Scale on RPS not CPU — "GC pauses lie to HPA"
 
+**VPA note:**
+> "VPA (Vertical Pod Autoscaler) increases pod resources without adding replicas.
+> Kubernetes 1.27+ supports InPlacePodVerticalScaling. However, the JVM can't yet
+> dynamically grow its heap in response — work is ongoing (Google G1, Oracle ZGC,
+> Microsoft Serial GC). For now, VPA works best for non-heap resources."
+
 ---
 
-### SLIDE 16 — Systematic Tuning Workflow (31:00–33:00)
+### SLIDE 16 — Cloud-Native Lifecycle (31:00–33:00)
+
+**Three things that kill your pods on deploy:**
+> "Graceful shutdown is two properties. Health probes are three YAML blocks.
+> terminationGracePeriodSeconds is one number. All three are required —
+> without them, every deployment drops in-flight requests."
+
+**The startupProbe story:**
+> "Without a startupProbe, Kubernetes uses livenessProbe from second zero.
+> Your JVM is loading 12,000 classes, takes 6 seconds to start, and
+> liveness kills it at second 3. The pod restarts. And restarts again.
+> CrashLoopBackOff from a health check — not from a bug."
+
+**The preStop race condition:**
+> "When Kubernetes terminates a pod, two things happen simultaneously:
+> SIGTERM is sent AND the pod is removed from Service endpoints. But endpoint
+> removal takes 1-5 seconds to propagate. preStop sleep(5) delays SIGTERM,
+> giving the load balancer time to stop sending traffic."
+
+**Walk through the timeline:**
+- t=0: K8s removes pod from endpoints + preStop starts
+- t=5: preStop completes, SIGTERM sent to Spring Boot
+- t=5-35: Spring Boot drains in-flight requests (30s timeout)
+- t=40: terminationGracePeriodSeconds expires, SIGKILL
+
+---
+
+### SLIDE 16b — JVM Warmup HealthIndicator (33:00–34:30)
+
+**The gap between "started" and "ready":**
+> "Your startupProbe says 'the JVM is alive.' But is it actually ready to handle
+> traffic at full speed? The JIT hasn't compiled your hot paths yet. Connection pools
+> aren't warmed. Caches are empty. The first 100 requests hit cold code paths and
+> take 3-10× longer than steady state."
+
+**The pattern:**
+> "A custom HealthIndicator that performs active warmup — invokes your key endpoints,
+> loads caches, establishes connections — before reporting UP. The readiness group
+> includes this indicator, so K8s won't send traffic until warmup completes."
+
+**The startup resource spike:**
+> "A fresh JVM needs 2-4× more CPU than at steady state. Class loading, JIT compilation,
+> Spring auto-configuration all spike CPU. That's why we set CPU limits to 2-4× requests.
+> For more control, kube-startup-cpu-boost gives temporary extra CPU during startup,
+> then scales back automatically."
+
+**The three solutions together:**
+1. Burstable QoS (requests < limits) — burst headroom for GC + startup
+2. kube-startup-cpu-boost — temporary extra CPU during initialization
+3. Warmup HealthIndicator — gates readiness on actual warmup, not just process liveness
+
+---
+
+### SLIDE 17 — Systematic Tuning Workflow (34:30–36:30)
 
 **Walk through the 5-step pipeline:**
 > "Instrument → Baseline → Diagnose → Tune → Validate. One change at a time.
@@ -239,16 +317,16 @@
 
 ---
 
-### SLIDE 17 — Cost Optimization Checklist (33:00–35:00)
+### SLIDE 18 — Cost Optimization Checklist (35:00–37:00)
 
 **Walk through the table:**
 > "Every row is a configuration change — not an architectural rewrite.
 > The virtual threads change is one property. The AppCDS change is a Containerfile rebuild.
-> Total estimated effort: about 4 hours per microservice."
+> Total estimated effort: about 4.5 hours per microservice."
 
 ---
 
-### SLIDE 18 — Demo 01 Recap (35:00–37:00)
+### SLIDE 19 — Demo 01 Recap (37:00–39:00)
 
 **If running live:**
 > Run `./demo.sh` in demo-01-heap-sizing. Show the "bad" container claiming host RAM,
@@ -260,7 +338,7 @@
 
 ---
 
-### SLIDE 19 — Demo 02 Recap (37:00–40:00)
+### SLIDE 20 — Demo 02 Recap (39:00–42:00)
 
 **If running live (recommended):**
 > Run `./demo.sh` in demo-02-gc-monitoring. Wait for podman-compose to start.
@@ -274,7 +352,7 @@
 
 ---
 
-### SLIDE 20 — Demo 03 Recap (40:00–43:00)
+### SLIDE 21 — Demo 03 Recap (42:00–45:00)
 
 **If running live:**
 > Run `./demo.sh` in demo-03-appcds. Compare the startup time with and without CDS.
@@ -286,7 +364,7 @@
 
 ---
 
-### SLIDE 21 — Key Takeaways (43:00–45:00)
+### SLIDE 22 — Key Takeaways (45:00–47:00)
 
 **Read each one slowly. This is the callback for the audience:**
 1. UseContainerSupport + MaxRAMPercentage — always
@@ -295,11 +373,12 @@
 4. Spring Boot + AppCDS = 35-55% faster startup
 5. Observe before you tune
 6. Autoscale on RPS not CPU
-7. Quantify savings
+7. Configure graceful shutdown + health probes
+8. Quantify savings
 
 ---
 
-### SLIDE 22 — Resources & Q&A (45:00–50:00+)
+### SLIDE 23 — Resources & Q&A (47:00–50:00+)
 
 **Deliver the repo URL:**
 > "All slides, all nine demos, and the analysis scripts are in this repo.
@@ -320,7 +399,7 @@ Each bonus section has its own demo.
 
 ---
 
-### SLIDES 23-25 — Project Leyden (Bonus)
+### SLIDES 24-26 — Project Leyden (Bonus)
 
 **Timing:** 5-7 minutes
 
@@ -338,7 +417,7 @@ Each bonus section has its own demo.
 
 ---
 
-### SLIDES 26-28 — gRPC (Bonus)
+### SLIDES 27-29 — gRPC (Bonus)
 
 **Timing:** 5-7 minutes
 
@@ -352,7 +431,7 @@ Each bonus section has its own demo.
 
 ---
 
-### SLIDES 29-30 — Low-Latency G1GC vs ZGC (Bonus)
+### SLIDES 30-31 — Low-Latency G1GC vs ZGC (Bonus)
 
 **Timing:** 5-7 minutes
 
@@ -366,7 +445,7 @@ watch the GC pause histograms diverge.
 
 ---
 
-### SLIDES 31-33 — Right-Sizing Cost Analysis (Bonus)
+### SLIDES 32-34 — Right-Sizing Cost Analysis (Bonus)
 
 **Timing:** 3-5 minutes
 
@@ -378,7 +457,7 @@ watch the GC pause histograms diverge.
 
 ---
 
-### SLIDES 34-36 — Project Panama FFM (Bonus)
+### SLIDES 35-37 — Project Panama FFM (Bonus)
 
 **Timing:** 5-7 minutes
 
@@ -391,7 +470,7 @@ watch the GC pause histograms diverge.
 
 ---
 
-### SLIDES 37-38 — AI Inference (Bonus)
+### SLIDES 38-39 — AI Inference (Bonus)
 
 **Timing:** 5-7 minutes
 
@@ -404,7 +483,7 @@ watch the GC pause histograms diverge.
 
 ---
 
-### SLIDES 39 — Project Valhalla (Bonus)
+### SLIDE 40 — Project Valhalla (Bonus)
 
 **Timing:** 3-5 minutes
 
@@ -415,12 +494,16 @@ watch the GC pause histograms diverge.
 
 ---
 
-### SLIDES 40-41 — Anti-Patterns (Bonus)
+### SLIDES 41-42 — Anti-Patterns (Bonus)
 
 **Timing:** 5-7 minutes
 
-**Present the anti-patterns slide as a gallery:**
+**Present the anti-patterns slide as a gallery (now 6 categories, 22 items):**
 > "Quick show of hands for each row. How many of you have..."
+
+**New categories to highlight:**
+> Lifecycle — "How many of you have server.shutdown=graceful set? No startupProbe?"
+> Build — "How many are running fat JARs in a single Containerfile layer?"
 
 **Then flip to the remediation slide:**
 > "Everything on this slide is a drop-in change. No application code changes.
@@ -452,9 +535,9 @@ watch the GC pause histograms diverge.
 | GC Optimization | 8-10 | 6 min | 20 min |
 | Startup + Virtual Threads | 11-12 | 5 min | 25 min |
 | Observability | 13-14 | 4 min | 29 min |
-| Autoscaling | 15 | 2 min | 31 min |
-| Tuning + Cost | 16-17 | 4 min | 35 min |
-| Demo Recaps | 18-20 | 8 min | 43 min |
-| Takeaways | 21 | 2 min | 45 min |
-| Q&A | 22 | 5-15 min | 50-60 min |
-| **Bonus (extended)** | 23-41 | 30-40 min | 90-100 min |
+| Autoscaling + Lifecycle + Warmup | 15-16b | 5.5 min | 34.5 min |
+| Tuning + Cost | 17-18 | 4 min | 38.5 min |
+| Demo Recaps | 19-21 | 8 min | 46.5 min |
+| Takeaways | 22 | 2 min | 48.5 min |
+| Q&A | 23 | 5-15 min | 53.5-63.5 min |
+| **Bonus (extended)** | 24-42 | 30-40 min | 92-102 min |

@@ -255,6 +255,10 @@ Right column — limits (hard ceiling):
 
 Common anti-pattern: setting requests = limits. This gives Guaranteed QoS class (good for CPU Manager / real-time workloads) but leaves zero headroom for GC CPU bursts. For most Java workloads, Burstable QoS is actually better.
 
+Resource redistribution evidence: Bruno Borges demonstrated at InfoQ Dev Summit that consolidating from 6 small replicas to 2 larger replicas (6 CPU total -> 4 CPU, 6GB -> 4GB) improved BOTH throughput AND latency. Fewer, better-resourced JVMs outperform many starved ones because each JVM gets enough CPU headroom for GC and JIT compilation.
+
+Startup vs steady state: a fresh JVM pod needs 2-4x more CPU than a warmed-up one (class loading, JIT compilation, Spring auto-config evaluation all spike simultaneously). This is another reason CPU limits should be 2-4x requests — the burst headroom absorbs both GC spikes AND startup spikes. Since a pod's resource request is the sum of all its containers, a sidecar-heavy pod compounds this problem. For more control, see kube-startup-cpu-boost (covered in the lifecycle section) and the warmup HealthIndicator pattern.
+
 Demo 07 shows this analysis on a real 7-service cluster: 4 nodes to 2 nodes, $6,720/month saving.
 
 Transition: "What does that look like visually? Next slide."`);
@@ -318,6 +322,8 @@ Card 1 — CPU Throttling Extends GC: when a G1GC pause starts, GC threads need 
 
 Card 2 — ParallelGCThreads Default: this is the most surprising one. Ask the audience: "How many GC threads does your JVM use?" Most don't know. The JVM defaults ParallelGCThreads to the number of CPUs it SEES — which is the host node's CPU count, not the container's CPU limit. On a 64-core node with a 4 CPU limit, you get 64 GC threads all fighting for 4 CPU slots. Fix: -XX:ParallelGCThreads=4 (match your CPU limit). This is a zero-cost, 5-minute fix that immediately improves GC pauses.
 
+Related flag: -XX:ActiveProcessorCount=N overrides the JVM's detected processor count entirely. Useful for I/O-bound microservices where you want a larger thread pool (Tomcat, virtual thread carrier pool) despite a low CPU limit. For example, a service with 1 CPU limit but heavy I/O might benefit from ActiveProcessorCount=4 to get more carrier threads. Use carefully — GC threads also scale with this.
+
 Card 3 — GC-Induced HPA Thrash: this is a feedback loop. GC pause -> CPU spike -> HPA sees high CPU -> scales out -> new pods start -> new pods run GC during warmup -> more CPU spikes -> more scale-out. Fix: scale on RPS (requests per second), not CPU.
 
 Card 4 — Heap Sizing vs GC Pressure: small heap = frequent but short GC. Large heap = infrequent but long GC. MaxRAMPercentage=75 is the sweet spot for most workloads. Tune from there based on your GC pause histogram data.
@@ -368,6 +374,8 @@ ZGC Generational (sub-1ms): the low-latency option. Pauses are constant regardle
 Serial GC: only for CLI tools, batch jobs, or heaps under 256MB. Full stop-the-world collection. Never use this for a web service.
 
 Decision heuristic from SRE with Java Microservices: monitor jvm_gc_pause_seconds via Micrometer. If your P99 GC pause exceeds 500ms, don't try to tune G1GC parameters — switch the algorithm to ZGC or Shenandoah. Algorithm selection beats parameter tuning every time.
+
+Fun fact from Bruno Borges (Microsoft) at InfoQ Dev Summit: the JVM's auto-selection threshold is hardcoded — 2 CPUs + 1792MB memory -> G1GC, but 2 CPUs + 1791MB -> Serial GC. One megabyte makes the difference. This is why you should always set the GC explicitly rather than relying on JVM ergonomics. In containers where memory limits are tight, you might accidentally land on Serial GC.
 
 Transition: "Once you've chosen a GC, here are the container-specific flags you need."`);
 }
@@ -439,6 +447,12 @@ Right column — AppCDS Fix:
 - Result: 35-55% startup reduction. This is MUCH bigger than what build-time frameworks see from CDS (~5%) because Spring Boot loads far more classes at runtime.
 
 Frame this positively: "Spring Boot's runtime architecture means CDS has more to cache. The bigger your app, the bigger the win."
+
+Two complementary techniques worth mentioning if the audience asks:
+- Auto-config exclusion: if you're not using JPA, exclude DataSourceAutoConfiguration via @SpringBootApplication(exclude = {...}) or spring.autoconfigure.exclude in application.properties. This reduces the number of @Conditional annotations evaluated at startup. Run with --debug to see which auto-configurations are active.
+- Layered JARs: Spring Boot's layered JAR mode splits dependencies from application code for Docker layer caching. Not a runtime optimization, but it makes CI/CD rebuilds dramatically faster since the dependency layer (~100MB) only rebuilds when pom.xml changes. Orthogonal to AppCDS — use both.
+
+Start with AppCDS — it's higher impact for less effort than either of these.
 
 The next slide shows the startup breakdown diagram.
 
@@ -663,7 +677,103 @@ External metrics (http_requests_per_second, jvm_memory_used_ratio): scale on RPS
 
 To use external metrics, you need either Prometheus Adapter or KEDA installed in the cluster. KEDA is simpler for Prometheus-based metrics. If the audience doesn't have either, they can still use the stabilization windows with the default CPU metric — that alone eliminates most GC-induced thrash.
 
-Transition: "We've covered the what. Now let's talk about the how — systematic tuning."`);
+VPA (Vertical Pod Autoscaler) is the alternative to HPA — it increases pod resources without adding replicas. Kubernetes 1.27+ supports InPlacePodVerticalScaling (increase CPU/memory without container restart). However, the JVM can't yet dynamically grow its heap in response — work is ongoing (Google on G1 GC, Oracle on ZGC, Microsoft on Serial GC). For now, VPA works best for non-heap resources; for heap, you still need to restart the pod.
+
+Transition: "Before we get to the tuning workflow, there's one more operational concern — pod lifecycle."`);
+}
+
+// SLIDE — Cloud-Native Lifecycle
+{
+  const s = S();
+  addContentTitle(s, "SECTION 06 · LIFECYCLE", "Cloud-Native Lifecycle — Zero-Downtime Deploys");
+  addStatusTable(s, [
+    { code: "1", name: "Graceful Shutdown", purpose: "server.shutdown=graceful + spring.lifecycle.timeout-per-shutdown-phase=30s" },
+    { code: "2", name: "startupProbe", purpose: "failureThreshold=30, periodSeconds=2 — 60s for JVM warmup before liveness checks" },
+    { code: "3", name: "livenessProbe", purpose: "/actuator/health/liveness — restart only on deadlock, not on slow startup" },
+    { code: "4", name: "readinessProbe", purpose: "/actuator/health/readiness — remove from Service while downstream deps are down" },
+    { code: "5", name: "preStop hook", purpose: "sleep 5 — let load balancer drain before SIGTERM reaches Spring Boot" },
+    { code: "6", name: "Termination timeout", purpose: "terminationGracePeriodSeconds: 40 — must exceed shutdown phase (30s)" },
+  ], { colW: [0.60, 2.40, 9.09] });
+  addNotes(s, `This slide closes the Kubernetes operational story: we've covered memory, GC, autoscaling — now we need to make sure deploys don't drop requests.
+
+Graceful Shutdown:
+server.shutdown=graceful tells Spring Boot to stop accepting new requests when it receives SIGTERM, but continue processing in-flight requests until they complete or the timeout expires. Without this, Spring Boot's default behavior is "immediate" — it kills all connections the instant SIGTERM arrives. Every request in progress gets a connection reset.
+
+spring.lifecycle.timeout-per-shutdown-phase=30s gives in-flight requests 30 seconds to complete. For typical REST APIs, 30 seconds is generous.
+
+startupProbe — the JVM-critical one:
+Without a startupProbe, Kubernetes uses livenessProbe from second zero. Your Spring Boot app is loading 12,000 classes, takes 6 seconds to start, and liveness kills it at second 3. CrashLoopBackOff from a health check — not from a bug. failureThreshold=30 × periodSeconds=2 = 60 seconds for startup.
+
+For the startup resource spike: Google's kube-startup-cpu-boost (open source, works on any K8s cluster including Azure and OpenShift) can grant containers extra CPU during startup, then automatically scale back to steady-state limits. This is ideal for JVM workloads where class loading, JIT compilation, and Spring auto-configuration evaluation need 2-4x more CPU than steady state. Pair this with the warmup HealthIndicator pattern (next slide) for maximum effect.
+
+livenessProbe vs readinessProbe:
+livenessProbe: "is the process deadlocked?" Uses /actuator/health/liveness. Should almost never fail — if it does, a restart is correct.
+readinessProbe: "can this pod handle traffic?" Uses /actuator/health/readiness, which checks downstream dependencies. When readiness fails, traffic stops but the pod stays alive — correct for transient issues like a database failover.
+
+preStop sleep(5) — the subtle one:
+When Kubernetes terminates a pod, two things happen simultaneously: SIGTERM is sent AND the pod is removed from Service endpoints. But endpoint removal takes 1-5 seconds to propagate through kube-proxy/iptables. During propagation, the load balancer still sends traffic to the pod. preStop sleep(5) delays SIGTERM, giving endpoints time to propagate. By the time Spring Boot receives SIGTERM, the load balancer has already stopped sending traffic.
+
+Timeline: t=0 K8s removes from endpoints + preStop starts -> t=5 SIGTERM sent -> t=5-35 Spring Boot drains -> t=40 SIGKILL.
+
+Transition: "So Kubernetes won't kill your pod on deploy. But is the pod actually ready to handle traffic at full speed? Next slide."`);
+}
+
+// SLIDE — Diagram: Cloud-Native Lifecycle
+{
+  const s = S();
+  addDiagramSlide(s, "LIFECYCLE", "Cloud-Native Lifecycle", "12-cloud-native-lifecycle",
+    "preStop → SIGTERM → graceful drain → SIGKILL · startupProbe guards JVM warmup.");
+  addNotes(s, `This diagram visualizes the pod termination timeline and health probe relationships.
+
+Top row — termination sequence: K8s signals termination at t=0, preStop sleep(5) runs, then SIGTERM is delivered at t=5, Spring Boot drains for up to 30s, and SIGKILL fires at t=40 if the process hasn't exited.
+
+Bottom row — health probes: startupProbe gives the JVM 60 seconds to warm up before liveness checks begin. livenessProbe restarts only on deadlock. readinessProbe removes from service during transient issues. The "races" edge shows that endpoint removal happens concurrently with the SIGTERM sequence — that's the race condition preStop sleep(5) solves.`);
+}
+
+// SLIDE — JVM Warmup — Active Readiness
+{
+  const s = S();
+  addContentTitle(s, "SECTION 06 · WARMUP", "JVM Warmup — Active Readiness");
+  addTwoColBullets(s,
+    [
+      { text: "Custom HealthIndicator Pattern", options: { bold: true, color: "00BCD4", bullet: false, fontSize: 14 } },
+      { text: "@Component implementing HealthIndicator + ApplicationListener<ApplicationReadyEvent>" },
+      { text: "AtomicBoolean warmupDone — reports DOWN until warmup completes" },
+      { text: "health() returns UP only after performWarmup() finishes" },
+      { text: "performWarmup() invokes key internal endpoints via RestClient" },
+      { text: "Forces JIT compilation of hot paths before traffic arrives" },
+      { text: "Warms connection pools, caches, and downstream services" },
+    ],
+    [
+      { text: "Configuration", options: { bold: true, color: "00BCD4", bullet: false, fontSize: 14 } },
+      { text: "management.endpoint.health.group.readiness.include=applicationWarmup" },
+      { text: "startupProbe → /actuator/health/readiness (waits for warmup)" },
+      { text: "failureThreshold=60, periodSeconds=2 → 120s budget" },
+      { text: "", options: { bullet: false } },
+      { text: "Startup Resource Spike", options: { bold: true, color: "E84855", bullet: false, fontSize: 14 } },
+      { text: "JVM needs 2-4× CPU at startup (class loading, JIT, auto-config)" },
+      { text: "Solution: burstable QoS + kube-startup-cpu-boost + warmup gate" },
+    ],
+    { fontSize: 11 }
+  );
+  addNotes(s, `This slide bridges the gap between "started" and "ready." The startupProbe says "the JVM process is alive," but that doesn't mean it's ready to handle traffic at full speed.
+
+On a fresh JVM:
+1. JIT hasn't compiled hot paths — first requests run in the interpreter, 3-10x slower
+2. Connection pools aren't established — first DB calls include TCP handshake + auth
+3. Caches are cold — every request hits the database
+4. Class loading is still happening — Spring Boot loads 10,000-15,000 classes
+
+The pattern: a custom HealthIndicator that reports DOWN until active warmup completes. The warmup method invokes key internal endpoints (using RestClient pointed at localhost), which forces the JIT to compile hot methods, establishes connection pools, and populates caches.
+
+The readiness health group includes this indicator (management.endpoint.health.group.readiness.include=applicationWarmup), so the readinessProbe won't pass until warmup is done. Kubernetes won't route traffic until the pod reports ready.
+
+The startup resource spike: a pod's resource request is the sum of all its container requests. During initialization, the JVM consumes 2-4x more CPU than at steady state. Three solutions work together:
+(a) Burstable QoS (requests < limits): CPU limits at 2-4x requests absorb both GC and startup spikes.
+(b) kube-startup-cpu-boost: Google's open-source tool grants temporary extra CPU during startup, then scales back automatically.
+(c) This warmup pattern: gates readiness on actual warmup completion, not just process liveness.
+
+Transition: "Now let's talk about the how — systematic tuning."`);
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -840,8 +950,9 @@ Transition: "Those are the three core demos. Let's recap the key takeaways."`);
     "Spring Boot + AppCDS = 35–55% faster startup — 3-stage Containerfile, zero code changes",
     "Observe before you tune — JFR + Cryostat + Actuator/Prometheus validates every change",
     "Autoscale on RPS not CPU — GC pauses lie to HPA. Enable virtual threads.",
+    "Configure graceful shutdown + health probes — two properties + three probe blocks = zero-downtime deploys",
     "Quantify savings — track cost per namespace to show business value",
-  ], { fontSize: 14 });
+  ], { fontSize: 13 });
   addNotes(s, `Read each takeaway slowly. Pause after each one. This is the audience's callback — they should be mentally checking these against their own environments.
 
 1. UseContainerSupport + MaxRAMPercentage: "How many of you are using hardcoded -Xmx today? That's the first thing to fix Monday morning."
@@ -850,7 +961,8 @@ Transition: "Those are the three core demos. Let's recap the key takeaways."`);
 4. AppCDS = 35-55% faster startup: "This is a Containerfile change. Zero code modifications. The more dependencies your Spring Boot app has, the bigger the win."
 5. Observe before you tune: "JFR, Cryostat, Actuator, Prometheus — pick your stack, but always have a baseline before making changes."
 6. Autoscale on RPS not CPU: "GC pauses lie to HPA. Scale on requests per second. Enable virtual threads to reduce thread stack memory."
-7. Quantify savings: "Track cost per namespace before and after. Show your manager the dollar number, not the technical improvement."
+7. Configure graceful shutdown + health probes: "server.shutdown=graceful, startupProbe, readinessProbe, livenessProbe, terminationGracePeriodSeconds > shutdown timeout. Without these, every deploy drops in-flight requests."
+8. Quantify savings: "Track cost per namespace before and after. Show your manager the dollar number, not the technical improvement."
 
 If you're short on time, emphasize takeaways 1, 4, and 7 — they have the highest impact-to-effort ratio.
 
@@ -1211,6 +1323,20 @@ The trade-off is clear: G1GC gives you maximum throughput, ZGC gives you predict
 Say: "Don't try to tune G1GC to get sub-millisecond pauses. Switch to ZGC."
 
 Transition: "Let me show you the difference. Demo 06 runs both side by side."`);
+}
+
+// SLIDE — Diagram: G1GC vs ZGC Pause Behavior
+{
+  const s = S();
+  addDiagramSlide(s, "LOW LATENCY", "G1GC vs ZGC — Pause Behavior", "11-g1gc-vs-zgc-pauses",
+    "G1GC: max throughput, pauses scale with heap · ZGC: predictable latency, 5-15% throughput cost.");
+  addNotes(s, `This diagram provides a visual summary of the G1GC vs ZGC trade-off.
+
+Left side (G1GC): Young GC pauses at 10-200ms, Mixed GC at 50-500ms, Full GC at 1-10s worst case. The key insight is the "Pauses scale with heap size" box — bigger heap means longer pauses. The bottom box shows the HPA consequence: CPU spikes from GC trigger false scale-out.
+
+Right side (ZGC): All pauses under 1ms regardless of heap size — 1GB or 16TB, same pause time. The load barrier overhead (5-15%) is the price. The bottom box shows the result: smooth CPU profile means no HPA thrash.
+
+The subtitle captures the honest trade-off: throughput vs latency predictability.`);
 }
 
 // SLIDE 42 — Demo 06 Recap
@@ -1612,6 +1738,10 @@ divider("B8", "Anti-Patterns\n& Remediation", "Common JVM anti-patterns on Kuber
       { text: "❌ CPU-based HPA with Java workloads", sub: true },
       { text: "❌ minReplicas: 1 in HPA", sub: true },
       { text: "❌ No stabilizationWindowSeconds", sub: true },
+      "🔄 Lifecycle",
+      { text: "❌ No graceful shutdown — requests dropped on deploy", sub: true },
+      { text: "❌ No startupProbe — liveness kills JVM during warmup", sub: true },
+      { text: "❌ terminationGracePeriodSeconds < shutdown timeout", sub: true },
     ],
     [
       "🚀 Startup / CDS",
@@ -1623,32 +1753,43 @@ divider("B8", "Anti-Patterns\n& Remediation", "Common JVM anti-patterns on Kuber
       { text: "❌ No GC pause histogram configured", sub: true },
       { text: "❌ Missing Actuator Prometheus endpoint", sub: true },
       { text: "❌ Tuning JVM flags without baseline", sub: true },
-    ], { fontSize: 13 });
-  addNotes(s, `This is the "audit checklist" slide. Walk through each quadrant and ask for a show of hands.
+      "📦 Build",
+      { text: "❌ Fat JAR in single Containerfile layer", sub: true },
+      { text: "❌ Unused auto-configs evaluated at startup", sub: true },
+      { text: "❌ No multi-stage Containerfile", sub: true },
+    ], { fontSize: 12 });
+  addNotes(s, `This is the "audit checklist" slide — now with six categories. Walk through each and ask for a show of hands.
 
-Memory (top-left):
+Memory (left column):
 - Hardcoded -Xmx/-Xms: "How many of you have -Xmx512m hardcoded in a Containerfile right now?" Usually 60%+ of the room. This ignores container limits entirely.
 - MaxRAMPercentage=90: slightly better — at least it's proportional — but 90% starves off-heap (Metaspace, thread stacks, native memory, GC bookkeeping). The OOMKill happens outside the heap and the JVM doesn't know why.
 - No MaxMetaspaceSize: Metaspace grows unbounded. In Spring Boot apps with many auto-configuration classes, this can silently consume 200-300MB.
 
-GC & CPU (top-right):
+GC & CPU:
 - Default ParallelGCThreads on large nodes: on a 64-core node, the JVM creates 64 GC threads even if your pod has a 2-core CPU limit. Those 64 threads fight for 2 cores, and GC pauses explode.
-- CPU-based HPA with Java: covered in Slide 8 — GC pauses look like CPU spikes. HPA scales on false signals.
+- CPU-based HPA with Java: GC pauses look like CPU spikes. HPA scales on false signals.
 - minReplicas: 1 in HPA: if the single pod is in a GC pause when traffic arrives, all requests queue. Minimum 2 replicas for any production Java workload.
-- No stabilizationWindowSeconds: without a cooldown, HPA oscillates — scale up, scale down, scale up, scale down — every time a GC pause triggers and resolves.
+- No stabilizationWindowSeconds: without a cooldown, HPA oscillates every time a GC pause triggers and resolves.
 
-Startup / CDS (bottom-left):
-- No spring.context.exit=onRefresh: this is Spring Boot-specific. Without it, the CDS training run doesn't exercise auto-configuration, conditional evaluation, or bean creation. You miss half the classes and your CDS improvement drops from 35-55% to 10-15%.
-- Missing -Xshare:on: without this flag, the JVM silently falls back to no-CDS mode if the archive is missing or incompatible. You think you have CDS, but you don't.
-- CDS archive from different JDK version: CDS archives are JDK-version-specific. If you build with JDK 21.0.3 and run with JDK 21.0.4, the archive may be silently ignored.
+Lifecycle — NEW:
+- No graceful shutdown: Spring Boot's default is server.shutdown=immediate. On deploy, Kubernetes sends SIGTERM and Spring Boot drops every in-flight request instantly. Two properties fix this.
+- No startupProbe: without it, Kubernetes applies livenessProbe from second zero. JVM is loading 12,000 classes, takes 6 seconds to start, liveness kills it at second 3. CrashLoopBackOff from a health check — not from a bug.
+- terminationGracePeriodSeconds too low: if K8s kills the pod before Spring Boot finishes draining, you lose in-flight requests.
 
-Observability (bottom-right):
-- No GC pause histogram: without management.metrics.distribution.percentiles-histogram.jvm.gc.pause=true, you can't see GC pause distributions.
-- Missing Actuator Prometheus endpoint: the metrics exist but they're not exposed. One property.
-- No PrometheusRule: you have the data but no alerting. GC P99 exceeds 500ms for 2 minutes → page someone.
-- Tuning without baseline: the cardinal sin. If you don't measure before changing flags, you don't know if your change helped or hurt.
+Startup / CDS (right column):
+- No spring.context.exit=onRefresh: the CDS training run misses half the classes. CDS improvement drops from 35-55% to 10-15%.
+- Missing -Xshare:on: JVM silently falls back to no-CDS mode. You think you have CDS, but you don't.
+- CDS archive from different JDK version: CDS archives are JDK-version-specific. Build with 21.0.3, run with 21.0.4 = archive silently ignored.
 
-The next slide shows the anti-patterns vs fixes diagram.
+Observability:
+- No GC pause histogram: without the percentiles-histogram property, you can't see GC pause distributions.
+- Missing Actuator Prometheus endpoint: the metrics exist but they're not exposed.
+- Tuning without baseline: the cardinal sin. Measure before changing flags.
+
+Build — NEW:
+- Fat JAR in single layer: every code change rebuilds the entire layer including all dependencies. Layered JAR mode splits them for better Docker layer caching.
+- Unused auto-configs: Spring Boot evaluates hundreds of @Conditional annotations. Exclude what you don't use.
+- No multi-stage Containerfile: builder toolchain (Maven, Gradle, JDK) in the final image. Multi-stage keeps runtime minimal.
 
 Transition: "Here's how to fix every single one of these."`);
 }
@@ -1657,12 +1798,10 @@ Transition: "Here's how to fix every single one of these."`);
 {
   const s = S();
   addDiagramSlide(s, "ANTI-PATTERNS", "Anti-Patterns vs Fixes", "06-anti-patterns-vs-fixes",
-    "16 anti-patterns across Memory, GC, Startup, and Observability.");
-  addNotes(s, `This diagram provides a visual summary of all 16 anti-patterns and their fixes in a two-column layout.
+    "Anti-patterns across Memory, GC, Lifecycle, Startup, Observability, and Build.");
+  addNotes(s, `This diagram provides a visual summary of the original 16 anti-patterns and their fixes in a two-column layout. The slides now cover 22 anti-patterns across six categories (the diagram shows the original four; the text slides cover all six).
 
-Walk through it row by row — left side (red) is the anti-pattern, right side (green) is the fix. The audience can photograph this as a quick-reference card.
-
-The four sections match the previous two slides: Memory, GC & CPU, Startup / CDS, and Observability. Use this as a review if you went through the text slides quickly.`);
+Walk through it row by row — left side (red) is the anti-pattern, right side (green) is the fix. The audience can photograph this as a quick-reference card.`);
 }
 
 // SLIDE 57 — Anti-Pattern Remediation
@@ -1680,6 +1819,10 @@ The four sections match the previous two slides: Memory, GC & CPU, Startup / CDS
       { text: "→ HPA on RPS, not CPU (KEDA or Prometheus Adapter)", sub: true },
       { text: "→ minReplicas: 2 minimum", sub: true },
       { text: "→ stabilizationWindowSeconds: 120", sub: true },
+      "✅ Lifecycle Fixes",
+      { text: "→ server.shutdown=graceful + timeout-per-shutdown-phase=30s", sub: true },
+      { text: "→ startupProbe: failureThreshold=30, periodSeconds=2", sub: true },
+      { text: "→ terminationGracePeriodSeconds: 40 (> shutdown timeout)", sub: true },
     ],
     [
       "✅ Startup / CDS Fixes",
@@ -1691,31 +1834,44 @@ The four sections match the previous two slides: Memory, GC & CPU, Startup / CDS
       { text: "→ percentiles-histogram.jvm.gc.pause=true", sub: true },
       { text: "→ management.endpoints.web.exposure.include=prometheus", sub: true },
       { text: "→ Baseline first. Change one flag. Measure again.", sub: true },
-    ], { fontSize: 13 });
-  addNotes(s, `This slide mirrors the previous anti-patterns slide — same four quadrants, but now with the fixes. Every fix is a drop-in change.
+      "✅ Build Fixes",
+      { text: "→ Use Spring Boot layered JAR for Docker layer caching", sub: true },
+      { text: "→ @SpringBootApplication(exclude = {…}) for unused configs", sub: true },
+      { text: "→ Multi-stage Containerfile: builder → runtime", sub: true },
+    ], { fontSize: 12 });
+  addNotes(s, `This slide mirrors the previous anti-patterns slide — same six categories, now with the fixes. Every fix is a drop-in change.
 
-Memory Fixes (top-left):
-- UseContainerSupport + MaxRAMPercentage=75.0: the single most impactful flag combination in this entire talk. Add it to JAVA_OPTS or JAVA_TOOL_OPTIONS in your Containerfile. 30 seconds.
-- 75%, not 90%: the 25% headroom covers Metaspace (~150-250MB for Spring Boot), thread stacks (~1MB per platform thread x 200 default Tomcat threads), direct ByteBuffers, GC bookkeeping, and the JVM's own native memory.
-- MaxMetaspaceSize=256m: puts a ceiling on Metaspace growth. If your app exceeds this, you get an OutOfMemoryError with a clear message instead of a silent OOMKill.
+Memory Fixes:
+- UseContainerSupport + MaxRAMPercentage=75.0: the single most impactful flag combination. Add it to JAVA_OPTS in your Containerfile.
+- 75%, not 90%: the 25% headroom covers Metaspace, thread stacks, direct ByteBuffers, GC bookkeeping, and native memory.
+- MaxMetaspaceSize=256m: puts a ceiling on Metaspace growth. Clear OutOfMemoryError instead of silent OOMKill.
 
-GC & CPU Fixes (top-right):
-- ParallelGCThreads=N where N equals your CPU request: if your pod requests 2 cores, set ParallelGCThreads=2. The JVM won't create more GC threads than it has cores to run them on.
-- HPA on RPS via KEDA or Prometheus Adapter: scale on actual request throughput, not CPU utilization. KEDA is easier to set up; Prometheus Adapter is more flexible.
-- minReplicas: 2 minimum: always have a hot standby for a Java workload. Cold start + class loading + JIT warmup means a single pod takes 5-10 seconds to handle traffic efficiently.
-- stabilizationWindowSeconds: 120: HPA waits 2 minutes before scaling down. This prevents oscillation during normal GC activity.
+GC & CPU Fixes:
+- ParallelGCThreads=N where N equals your CPU request. The JVM won't create more GC threads than it has cores.
+- HPA on RPS via KEDA or Prometheus Adapter. Scale on traffic, not CPU utilization.
+- minReplicas: 2 minimum. Always have a hot standby for JVM workloads.
+- stabilizationWindowSeconds: 120. Prevents oscillation during normal GC activity.
 
-Startup / CDS Fixes (bottom-left):
-- spring.context.exit=onRefresh: tells Spring Boot to exit immediately after the ApplicationContext is fully refreshed. This is the training run — it loads all classes, evaluates all conditions, creates all beans, then exits cleanly. The CDS dump captures everything.
-- -Xshare:on (not auto): "on" means "fail if the archive is missing." "auto" means "silently skip CDS if the archive is missing." You want to know immediately if CDS is broken.
-- Pin JDK minor version: use eclipse-temurin:21.0.3 not eclipse-temurin:21. CDS archives are version-specific.
-- Use 3-stage Containerfile for AppCDS (Demo 03): builder → CDS trainer → runtime. The trainer stage captures the full class list.
+Lifecycle Fixes — NEW:
+- server.shutdown=graceful: two properties. Spring Boot drains in-flight requests before exiting. timeout-per-shutdown-phase=30s gives requests 30 seconds.
+- startupProbe with failureThreshold=30 and periodSeconds=2: 60 seconds for JVM startup. Liveness is not checked until startup succeeds. No more CrashLoopBackOff during class loading.
+- terminationGracePeriodSeconds: 40: must exceed shutdown phase (30s). Add 10s buffer for the preStop hook.
 
-Observability Fixes (bottom-right):
-- percentiles-histogram: one line in application.properties. Enables the histogram buckets that Grafana needs to show P50/P95/P99 GC pause distributions.
-- endpoints.web.exposure.include=prometheus: exposes the /actuator/prometheus endpoint for Prometheus scraping.
-- PrometheusRule: a Kubernetes custom resource that triggers an alert. GC P99 > 500ms for 2 consecutive minutes → page the on-call engineer.
-- Baseline → change → measure: the golden rule. Never change two flags at once. You won't know which one helped.
+Startup / CDS Fixes:
+- spring.context.exit=onRefresh: loads all classes during CDS training. Without it, CDS improvement drops from 35-55% to 10-15%.
+- -Xshare:on (not auto): fail immediately if the CDS archive is missing.
+- Pin JDK minor version. CDS archives are version-specific.
+- 3-stage Containerfile: builder → CDS trainer → runtime.
+
+Observability Fixes:
+- percentiles-histogram: enables histogram buckets for Grafana GC pause panels.
+- endpoints.web.exposure.include=prometheus: exposes the scraping endpoint.
+- Baseline → change → measure: never change two flags at once.
+
+Build Fixes — NEW:
+- Layered JAR: Spring Boot 2.3+ splits dependencies from application code. Dependencies rebuild only when pom.xml changes. Dramatically faster CI/CD pushes.
+- Exclude unused auto-configs: @SpringBootApplication(exclude = {DataSourceAutoConfiguration.class, ...}). Run with --debug to see active auto-configurations.
+- Multi-stage Containerfile: builder has Maven + JDK, runtime has JRE only. Image goes from ~700MB to ~250MB.
 
 Say: "Take a photo of this slide. It's your Monday morning checklist."
 

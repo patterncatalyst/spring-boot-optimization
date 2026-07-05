@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate all 10 Excalidraw diagrams for spring-boot-optimization.
+"""Generate all 12 Excalidraw diagrams for spring-boot-optimization.
 
 Uses the LGTM diagram generator for SVG + Excalidraw output, then patches
 the Excalidraw appState to use dark theme matching the presentation.
@@ -421,6 +421,80 @@ def diagram_10():
 
 
 # ═══════════════════════════════════════════════════════════════════
+# DIAGRAM 11 — G1GC vs ZGC Pause Behavior
+# ═══════════════════════════════════════════════════════════════════
+def diagram_11():
+    g.emit("11-g1gc-vs-zgc-pauses", 880, 420,
+        bands=[
+            {"x": 20, "y": 100, "w": 410, "h": 290, "label": "G1GC — Default", "fill": RED_FILL},
+            {"x": 450, "y": 100, "w": 410, "h": 290, "label": "ZGC Generational — JDK 21+", "fill": BLUE_FILL},
+        ],
+        nodes=[
+            # G1GC side — escalating pauses
+            {"x": 40,  "y": 130, "w": 170, "h": 55, "style": "box",    "lines": ["Young GC", "10-200ms pause"]},
+            {"x": 230, "y": 130, "w": 180, "h": 55, "style": "accent", "lines": ["Mixed GC", "50-500ms pause"]},
+            {"x": 40,  "y": 200, "w": 170, "h": 55, "style": "red",    "lines": ["Full GC", "1-10s (worst)"]},
+            {"x": 230, "y": 200, "w": 180, "h": 55, "style": "red",    "lines": ["Pauses scale", "with heap size"]},
+            {"x": 135, "y": 280, "w": 180, "h": 55, "style": "red",    "lines": ["CPU spike → HPA", "GC thrash cycle"]},
+            # ZGC side — flat sub-1ms
+            {"x": 470, "y": 130, "w": 170, "h": 55, "style": "user",   "lines": ["All pauses", "< 1ms"]},
+            {"x": 660, "y": 130, "w": 180, "h": 55, "style": "user",   "lines": ["Any heap size", "1GB to 16TB"]},
+            {"x": 470, "y": 200, "w": 170, "h": 55, "style": "box",    "lines": ["Load barriers", "5-15% overhead"]},
+            {"x": 660, "y": 200, "w": 180, "h": 55, "style": "box",    "lines": ["Scales with", "thread count"]},
+            {"x": 565, "y": 280, "w": 180, "h": 55, "style": "ink",    "lines": ["Smooth CPU", "No HPA thrash"]},
+        ],
+        edges=[
+            {"x1": 210, "y1": 157, "x2": 230, "y2": 157},
+            {"x1": 210, "y1": 227, "x2": 230, "y2": 227, "amber": True},
+            {"x1": 640, "y1": 157, "x2": 660, "y2": 157},
+            {"x1": 640, "y1": 227, "x2": 660, "y2": 227},
+        ],
+        notes=[
+            {"x": 440, "y": 25, "text": "G1GC vs ZGC — Pause Behavior", "anchor": "middle", "bold": True, "size": 20, "color": CYAN},
+            {"x": 440, "y": 50, "text": "G1GC: max throughput, pauses scale with heap · ZGC: predictable latency, 5-15% throughput cost", "anchor": "middle", "size": 13, "color": GREY},
+        ])
+    patch_dark_theme("11-g1gc-vs-zgc-pauses")
+
+
+# ═══════════════════════════════════════════════════════════════════
+# DIAGRAM 12 — Cloud-Native Lifecycle Timeline
+# ═══════════════════════════════════════════════════════════════════
+def diagram_12():
+    g.emit("12-cloud-native-lifecycle", 880, 420,
+        bands=[
+            {"x": 20, "y": 100, "w": 840, "h": 130, "label": "Pod Termination Timeline", "fill": DARK_FILL},
+            {"x": 20, "y": 250, "w": 840, "h": 140, "label": "Health Probes", "fill": BLUE_FILL},
+        ],
+        nodes=[
+            # Timeline row — termination sequence
+            {"x": 40,  "y": 125, "w": 130, "h": 60, "style": "accent", "lines": ["K8s signal", "t=0"]},
+            {"x": 195, "y": 125, "w": 130, "h": 60, "style": "box",    "lines": ["preStop", "sleep(5)"]},
+            {"x": 350, "y": 125, "w": 130, "h": 60, "style": "red",    "lines": ["SIGTERM", "t=5"]},
+            {"x": 505, "y": 125, "w": 160, "h": 60, "style": "green",  "lines": ["Graceful drain", "30s timeout"]},
+            {"x": 700, "y": 125, "w": 140, "h": 60, "style": "ink",    "lines": ["SIGKILL", "t=40"]},
+            # Health probes row
+            {"x": 40,  "y": 275, "w": 175, "h": 55, "style": "accent", "lines": ["startupProbe", "60s window for JVM warmup"]},
+            {"x": 240, "y": 275, "w": 175, "h": 55, "style": "green",  "lines": ["livenessProbe", "/actuator/health/liveness"]},
+            {"x": 440, "y": 275, "w": 175, "h": 55, "style": "user",   "lines": ["readinessProbe", "/actuator/health/readiness"]},
+            {"x": 665, "y": 275, "w": 175, "h": 55, "style": "box",    "lines": ["Endpoint removal", "1-5s propagation"]},
+        ],
+        edges=[
+            {"x1": 170, "y1": 155, "x2": 195, "y2": 155},
+            {"x1": 325, "y1": 155, "x2": 350, "y2": 155, "amber": True},
+            {"x1": 480, "y1": 155, "x2": 505, "y2": 155},
+            {"x1": 665, "y1": 155, "x2": 700, "y2": 155, "amber": True},
+            {"x1": 215, "y1": 275, "x2": 240, "y2": 275, "label": "then"},
+            {"x1": 415, "y1": 302, "x2": 440, "y2": 302},
+            {"x1": 615, "y1": 302, "x2": 665, "y2": 302, "dashed": True, "label": "races"},
+        ],
+        notes=[
+            {"x": 440, "y": 25, "text": "Cloud-Native Lifecycle", "anchor": "middle", "bold": True, "size": 20, "color": CYAN},
+            {"x": 440, "y": 50, "text": "preStop → SIGTERM → graceful drain → SIGKILL · startupProbe guards JVM warmup", "anchor": "middle", "size": 13, "color": GREY},
+        ])
+    patch_dark_theme("12-cloud-native-lifecycle")
+
+
+# ═══════════════════════════════════════════════════════════════════
 # Generate all diagrams
 # ═══════════════════════════════════════════════════════════════════
 if __name__ == "__main__":
@@ -481,6 +555,8 @@ if __name__ == "__main__":
     diagram_08()
     diagram_09()
     diagram_10()
+    diagram_11()
+    diagram_12()
 
     if light_mode:
         png_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)),
@@ -498,4 +574,4 @@ if __name__ == "__main__":
         shutil.rmtree(light_dir)
         print(f"\nLight PNGs written to {png_dir}")
     else:
-        print("All 10 diagrams generated.")
+        print("All 12 diagrams generated.")

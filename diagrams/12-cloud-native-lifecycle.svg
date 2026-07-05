@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 420" font-family="'Red Hat Text', system-ui, sans-serif" role="img">
+<defs><marker id="a" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#555"/></marker><marker id="am" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#b8650a"/></marker></defs>
+<rect x="20" y="100" width="840" height="130" rx="12" fill="#0D1B2A" stroke="#ddd"/>
+<text x="32" y="120" font-size="12" font-weight="700" fill="#888">Pod Termination Timeline</text>
+<rect x="20" y="250" width="840" height="140" rx="12" fill="#0D1B2A" stroke="#ddd"/>
+<text x="32" y="270" font-size="12" font-weight="700" fill="#888">Health Probes</text>
+<rect x="40" y="125" width="130" height="60" rx="9" fill="#281E0D" stroke="#F5A623" stroke-width="2"/>
+<text x="105.0" y="153.0" font-size="13.5" font-weight="700" fill="#ECF0F1" text-anchor="middle">K8s signal</text>
+<text x="105.0" y="170.0" font-size="11.5" fill="#90A4AE" text-anchor="middle">t=0</text>
+<rect x="195" y="125" width="130" height="60" rx="9" fill="#122040" stroke="#1E3A5F" stroke-width="2"/>
+<text x="260.0" y="153.0" font-size="13.5" font-weight="700" fill="#ECF0F1" text-anchor="middle">preStop</text>
+<text x="260.0" y="170.0" font-size="11.5" fill="#90A4AE" text-anchor="middle">sleep(5)</text>
+<rect x="350" y="125" width="130" height="60" rx="9" fill="#2C1810" stroke="#E84855" stroke-width="1.5"/>
+<text x="415.0" y="153.0" font-size="13.5" font-weight="700" fill="#ECF0F1" text-anchor="middle">SIGTERM</text>
+<text x="415.0" y="170.0" font-size="11.5" fill="#90A4AE" text-anchor="middle">t=5</text>
+<rect x="505" y="125" width="160" height="60" rx="9" fill="#0D2818" stroke="#27AE60" stroke-width="1.5"/>
+<text x="585.0" y="153.0" font-size="13.5" font-weight="700" fill="#ECF0F1" text-anchor="middle">Graceful drain</text>
+<text x="585.0" y="170.0" font-size="11.5" fill="#90A4AE" text-anchor="middle">30s timeout</text>
+<rect x="700" y="125" width="140" height="60" rx="9" fill="#00BCD4" stroke="#00BCD4" stroke-width="2"/>
+<text x="770.0" y="153.0" font-size="13.5" font-weight="700" fill="#ffffff" text-anchor="middle">SIGKILL</text>
+<text x="770.0" y="170.0" font-size="11.5" fill="#dddddd" text-anchor="middle">t=40</text>
+<rect x="40" y="275" width="175" height="55" rx="9" fill="#281E0D" stroke="#F5A623" stroke-width="2"/>
+<text x="127.5" y="300.5" font-size="13.5" font-weight="700" fill="#ECF0F1" text-anchor="middle">startupProbe</text>
+<text x="127.5" y="317.5" font-size="11.5" fill="#90A4AE" text-anchor="middle">60s window for JVM warmup</text>
+<rect x="240" y="275" width="175" height="55" rx="9" fill="#0D2818" stroke="#27AE60" stroke-width="1.5"/>
+<text x="327.5" y="300.5" font-size="13.5" font-weight="700" fill="#ECF0F1" text-anchor="middle">livenessProbe</text>
+<text x="327.5" y="317.5" font-size="11.5" fill="#90A4AE" text-anchor="middle">/actuator/health/liveness</text>
+<rect x="440" y="275" width="175" height="55" rx="9" fill="#0D1B2A" stroke="#1E6FC8" stroke-width="2"/>
+<text x="527.5" y="300.5" font-size="13.5" font-weight="700" fill="#ECF0F1" text-anchor="middle">readinessProbe</text>
+<text x="527.5" y="317.5" font-size="11.5" fill="#90A4AE" text-anchor="middle">/actuator/health/readiness</text>
+<rect x="665" y="275" width="175" height="55" rx="9" fill="#122040" stroke="#1E3A5F" stroke-width="2"/>
+<text x="752.5" y="300.5" font-size="13.5" font-weight="700" fill="#ECF0F1" text-anchor="middle">Endpoint removal</text>
+<text x="752.5" y="317.5" font-size="11.5" fill="#90A4AE" text-anchor="middle">1-5s propagation</text>
+<path d="M170,155 L195,155" fill="none" stroke="#555" stroke-width="2" marker-end="url(#a)"/>
+<path d="M325,155 L350,155" fill="none" stroke="#b8650a" stroke-width="2" marker-end="url(#am)"/>
+<path d="M480,155 L505,155" fill="none" stroke="#555" stroke-width="2" marker-end="url(#a)"/>
+<path d="M665,155 L700,155" fill="none" stroke="#b8650a" stroke-width="2" marker-end="url(#am)"/>
+<path d="M215,275 L240,275" fill="none" stroke="#555" stroke-width="2" marker-end="url(#a)"/>
+<text x="233.5" y="269.0" font-size="11" fill="#ffffff" stroke="#ffffff" stroke-width="3" paint-order="stroke" text-anchor="middle">then</text>
+<text x="233.5" y="269.0" font-size="11" fill="#555" text-anchor="middle">then</text>
+<path d="M415,302 L440,302" fill="none" stroke="#555" stroke-width="2" marker-end="url(#a)"/>
+<path d="M615,302 L665,302" fill="none" stroke="#555" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#a)"/>
+<text x="646.0" y="296.0" font-size="11" fill="#ffffff" stroke="#ffffff" stroke-width="3" paint-order="stroke" text-anchor="middle">races</text>
+<text x="646.0" y="296.0" font-size="11" fill="#555" text-anchor="middle">races</text>
+<text x="440" y="25" font-size="20" fill="#00BCD4" text-anchor="middle" font-weight="700">Cloud-Native Lifecycle</text>
+<text x="440" y="50" font-size="13" fill="#90A4AE" text-anchor="middle">preStop → SIGTERM → graceful drain → SIGKILL · startupProbe guards JVM warmup</text>
+</svg>

@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 420" font-family="'Red Hat Text', system-ui, sans-serif" role="img">
+<defs><marker id="a" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#555"/></marker><marker id="am" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#b8650a"/></marker></defs>
+<rect x="20" y="100" width="410" height="290" rx="12" fill="#2C1810" stroke="#ddd"/>
+<text x="32" y="120" font-size="12" font-weight="700" fill="#888">G1GC — Default</text>
+<rect x="450" y="100" width="410" height="290" rx="12" fill="#0D1B2A" stroke="#ddd"/>
+<text x="462" y="120" font-size="12" font-weight="700" fill="#888">ZGC Generational — JDK 21+</text>
+<rect x="40" y="130" width="170" height="55" rx="9" fill="#122040" stroke="#1E3A5F" stroke-width="2"/>
+<text x="125.0" y="155.5" font-size="13.5" font-weight="700" fill="#ECF0F1" text-anchor="middle">Young GC</text>
+<text x="125.0" y="172.5" font-size="11.5" fill="#90A4AE" text-anchor="middle">10-200ms pause</text>
+<rect x="230" y="130" width="180" height="55" rx="9" fill="#281E0D" stroke="#F5A623" stroke-width="2"/>
+<text x="320.0" y="155.5" font-size="13.5" font-weight="700" fill="#ECF0F1" text-anchor="middle">Mixed GC</text>
+<text x="320.0" y="172.5" font-size="11.5" fill="#90A4AE" text-anchor="middle">50-500ms pause</text>
+<rect x="40" y="200" width="170" height="55" rx="9" fill="#2C1810" stroke="#E84855" stroke-width="1.5"/>
+<text x="125.0" y="225.5" font-size="13.5" font-weight="700" fill="#ECF0F1" text-anchor="middle">Full GC</text>
+<text x="125.0" y="242.5" font-size="11.5" fill="#90A4AE" text-anchor="middle">1-10s (worst)</text>
+<rect x="230" y="200" width="180" height="55" rx="9" fill="#2C1810" stroke="#E84855" stroke-width="1.5"/>
+<text x="320.0" y="225.5" font-size="13.5" font-weight="700" fill="#ECF0F1" text-anchor="middle">Pauses scale</text>
+<text x="320.0" y="242.5" font-size="11.5" fill="#90A4AE" text-anchor="middle">with heap size</text>
+<rect x="135" y="280" width="180" height="55" rx="9" fill="#2C1810" stroke="#E84855" stroke-width="1.5"/>
+<text x="225.0" y="305.5" font-size="13.5" font-weight="700" fill="#ECF0F1" text-anchor="middle">CPU spike → HPA</text>
+<text x="225.0" y="322.5" font-size="11.5" fill="#90A4AE" text-anchor="middle">GC thrash cycle</text>
+<rect x="470" y="130" width="170" height="55" rx="9" fill="#0D1B2A" stroke="#1E6FC8" stroke-width="2"/>
+<text x="555.0" y="155.5" font-size="13.5" font-weight="700" fill="#ECF0F1" text-anchor="middle">All pauses</text>
+<text x="555.0" y="172.5" font-size="11.5" fill="#90A4AE" text-anchor="middle">&lt; 1ms</text>
+<rect x="660" y="130" width="180" height="55" rx="9" fill="#0D1B2A" stroke="#1E6FC8" stroke-width="2"/>
+<text x="750.0" y="155.5" font-size="13.5" font-weight="700" fill="#ECF0F1" text-anchor="middle">Any heap size</text>
+<text x="750.0" y="172.5" font-size="11.5" fill="#90A4AE" text-anchor="middle">1GB to 16TB</text>
+<rect x="470" y="200" width="170" height="55" rx="9" fill="#122040" stroke="#1E3A5F" stroke-width="2"/>
+<text x="555.0" y="225.5" font-size="13.5" font-weight="700" fill="#ECF0F1" text-anchor="middle">Load barriers</text>
+<text x="555.0" y="242.5" font-size="11.5" fill="#90A4AE" text-anchor="middle">5-15% overhead</text>
+<rect x="660" y="200" width="180" height="55" rx="9" fill="#122040" stroke="#1E3A5F" stroke-width="2"/>
+<text x="750.0" y="225.5" font-size="13.5" font-weight="700" fill="#ECF0F1" text-anchor="middle">Scales with</text>
+<text x="750.0" y="242.5" font-size="11.5" fill="#90A4AE" text-anchor="middle">thread count</text>
+<rect x="565" y="280" width="180" height="55" rx="9" fill="#00BCD4" stroke="#00BCD4" stroke-width="2"/>
+<text x="655.0" y="305.5" font-size="13.5" font-weight="700" fill="#ffffff" text-anchor="middle">Smooth CPU</text>
+<text x="655.0" y="322.5" font-size="11.5" fill="#dddddd" text-anchor="middle">No HPA thrash</text>
+<path d="M210,157 L230,157" fill="none" stroke="#555" stroke-width="2" marker-end="url(#a)"/>
+<path d="M210,227 L230,227" fill="none" stroke="#b8650a" stroke-width="2" marker-end="url(#am)"/>
+<path d="M640,157 L660,157" fill="none" stroke="#555" stroke-width="2" marker-end="url(#a)"/>
+<path d="M640,227 L660,227" fill="none" stroke="#555" stroke-width="2" marker-end="url(#a)"/>
+<text x="440" y="25" font-size="20" fill="#00BCD4" text-anchor="middle" font-weight="700">G1GC vs ZGC — Pause Behavior</text>
+<text x="440" y="50" font-size="13" fill="#90A4AE" text-anchor="middle">G1GC: max throughput, pauses scale with heap · ZGC: predictable latency, 5-15% throughput cost</text>
+</svg>

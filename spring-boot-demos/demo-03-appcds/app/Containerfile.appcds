@@ -11,6 +11,7 @@
 
 # -- Stage 1: Build -----------------------------------------------
 FROM registry.access.redhat.com/ubi9/openjdk-21 AS builder
+USER 0
 WORKDIR /build
 COPY pom.xml .
 RUN mvn dependency:resolve --no-transfer-progress -q
@@ -20,6 +21,7 @@ RUN mvn package -DskipTests --no-transfer-progress -q
 # -- Stage 2: AppCDS Archive Generation ---------------------------
 # Needs full JDK for -Xshare:dump (the JRE does not include it)
 FROM registry.access.redhat.com/ubi9/openjdk-21 AS cds-trainer
+USER 0
 WORKDIR /training
 
 COPY --from=builder /build/target/startup-demo-*.jar app.jar

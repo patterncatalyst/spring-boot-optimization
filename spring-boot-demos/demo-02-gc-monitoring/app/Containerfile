@@ -5,6 +5,7 @@
 
 # Stage 1: Build with Maven (UBI 9 OpenJDK 21)
 FROM registry.access.redhat.com/ubi9/openjdk-21 AS builder
+USER 0
 WORKDIR /build
 
 # Copy pom first to cache Maven dependencies layer

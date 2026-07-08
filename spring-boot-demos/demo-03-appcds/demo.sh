@@ -118,7 +118,10 @@ hr
 echo -e "${BOLD}Step 3: Results${RESET}"
 echo
 
-python3 - <<'PYEOF'
+BASELINE_CSV=$(IFS=,; echo "${baseline_times[*]}")
+APPCDS_CSV=$(IFS=,; echo "${appcds_times[*]}")
+
+BASELINE="$BASELINE_CSV" APPCDS="$APPCDS_CSV" python3 - <<'PYEOF'
 import sys, os
 
 baseline_times = [int(x) for x in os.environ.get('BASELINE','').split(',') if x and x != '0'] or [4200, 3900, 4100, 4300, 4000]
@@ -174,8 +177,9 @@ podman images startup-demo --format "  {{.Repository}}:{{.Tag}}  size={{.Size}}"
 echo
 echo "  Verify AppCDS is active (look for 'shared objects file' in JVM output):"
 podman run --rm --memory=256m \
+    --entrypoint sh \
     startup-demo:appcds \
-    sh -c 'java -Xshare:on -XX:SharedArchiveFile=/deployments/app.jsa -version 2>&1' 2>/dev/null | head -5 || true
+    -c 'java -Xshare:on -XX:SharedArchiveFile=/deployments/app.jsa -version 2>&1' 2>/dev/null | head -5 || true
 
 # ── Step 5: OpenShift / Kubernetes integration note ────────────────
 hr

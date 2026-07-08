@@ -3,7 +3,7 @@
 # ONNX Runtime uses Panama FFM to call native inference kernels.
 # No Python sidecar. No external model download.
 
-FROM eclipse-temurin:25 AS builder
+FROM docker.io/library/maven:3.9-eclipse-temurin-25 AS builder
 WORKDIR /build
 COPY app/pom.xml .
 COPY app/src ./src

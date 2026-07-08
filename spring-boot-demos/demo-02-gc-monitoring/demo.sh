@@ -60,7 +60,7 @@ generate_gc_load() {
     local iters=${4:-8}
     echo -e "${CYAN}  → Generating GC pressure on ${label} (${mb}MB x ${iters} iterations)...${RESET}"
     response=$(curl -sf "http://localhost:${app_port}/allocate?mb=${mb}&iterations=${iters}" 2>/dev/null || echo '{"error":"app not ready"}')
-    echo "    $(echo $response | python3 -c "import sys,json; d=json.load(sys.stdin); print(f\"Allocated: {d.get('allocatedMB','?')} MB | GC count: {d.get('gcCount','?')} | GC time: {d.get('gcTimeMs','?')}ms | Duration: {d.get('totalDurationMs','?')}ms\")" 2>/dev/null || echo "$response")"
+    echo "    $(echo $response | python3 -c "import sys,json; d=json.load(sys.stdin); print(f\"Allocated: {d.get('allocatedMB','?')} MB | GC count: {d.get('gcCount','?')} | GC time: {d.get('gcTimeMs','?')}ms | Duration: {d.get('durationMs','?')}ms\")" 2>/dev/null || echo "$response")"
 }
 
 # ── Step 1: Start the stack ────────────────────────────────────────

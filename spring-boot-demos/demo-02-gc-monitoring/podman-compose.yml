@@ -33,7 +33,7 @@ services:
     networks:
       - monitoring
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      test: ["CMD-SHELL", "exec 6<>/dev/tcp/localhost/8080 || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -60,7 +60,7 @@ services:
     networks:
       - monitoring
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      test: ["CMD-SHELL", "exec 6<>/dev/tcp/localhost/8080 || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5

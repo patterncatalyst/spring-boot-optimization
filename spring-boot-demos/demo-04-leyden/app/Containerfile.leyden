@@ -15,7 +15,8 @@
 # ============================================================
 
 # -- Stage 1: Compile ---------------------------------------------
-FROM docker.io/library/maven:3.9-eclipse-temurin-25 AS compiler
+FROM registry.access.redhat.com/ubi9/openjdk-25 AS compiler
+USER 0
 WORKDIR /build
 COPY pom.xml .
 COPY src ./src
@@ -23,7 +24,8 @@ RUN mvn package -Dmaven.test.skip=true --no-transfer-progress
 
 # -- Stage 2: Train + Create AOT Cache ----------------------------
 # Full JDK required -- AOT cache creation needs compiler internals
-FROM docker.io/library/eclipse-temurin:25 AS trainer
+FROM registry.access.redhat.com/ubi9/openjdk-25 AS trainer
+USER 0
 WORKDIR /app
 
 COPY --from=compiler /build/target/*.jar app.jar
@@ -49,7 +51,7 @@ RUN java -XX:AOTMode=create \
     echo "app.aot: $(ls -lh app.aot | awk '{print $5}')"
 
 # -- Stage 3: Runtime with AOT Cache ------------------------------
-FROM docker.io/library/eclipse-temurin:25-jre
+FROM registry.access.redhat.com/ubi9/openjdk-25-runtime
 WORKDIR /app
 
 COPY --from=trainer /app/app.jar app.jar

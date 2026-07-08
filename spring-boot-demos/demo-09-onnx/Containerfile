@@ -3,7 +3,8 @@
 # ONNX Runtime uses Panama FFM to call native inference kernels.
 # No Python sidecar. No external model download.
 
-FROM docker.io/library/maven:3.9-eclipse-temurin-25 AS builder
+FROM registry.access.redhat.com/ubi9/openjdk-25 AS builder
+USER 0
 WORKDIR /build
 COPY app/pom.xml .
 COPY app/src ./src
@@ -11,7 +12,7 @@ RUN --mount=type=cache,target=/root/.m2 \
     mvn package -Dmaven.test.skip=true --no-transfer-progress \
       -f pom.xml
 
-FROM eclipse-temurin:25-jre
+FROM registry.access.redhat.com/ubi9/openjdk-25-runtime
 WORKDIR /app
 
 COPY --from=builder /build/target/onnx-demo-*.jar app.jar

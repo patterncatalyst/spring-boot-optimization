@@ -20,16 +20,16 @@ RUN cmake -S . -B build -DCMAKE_BUILD_TYPE=Release && \
     cmake --install build --prefix /install
 
 # ── Stage 2: Spring Boot Java app ─────────────────────────────────────────────
-FROM docker.io/library/maven:3.9-eclipse-temurin-25 AS java-builder
+FROM registry.access.redhat.com/ubi9/openjdk-25 AS java-builder
+USER 0
 WORKDIR /build
-USER root
 
 COPY app/pom.xml .
 COPY app/src ./src
 RUN mvn package -Dmaven.test.skip=true --no-transfer-progress
 
 # ── Stage 3: Runtime ──────────────────────────────────────────────────────────
-FROM docker.io/library/eclipse-temurin:25-jre
+FROM registry.access.redhat.com/ubi9/openjdk-25-runtime
 WORKDIR /app
 
 # Copy native library into a standard path

@@ -55,32 +55,29 @@ echo
 podman images startup-demo --format "  {{.Repository}}:{{.Tag}}  {{.Size}}  (created {{.Created}})"
 
 # ── Helper: measure startup time ──────────────────────────────────
-# Parses Spring Boot's "Started ... in X.XXX seconds" from container logs
+# Spring Boot 4.x removed the "Started X in N seconds" log line.
+# Query the app's /startup-time endpoint instead — returns {"totalStartupMs": N, ...}
+MEASURE_PORT=8099
 measure_from_log() {
     local image=$1
-    # Run detached, poll container logs until startup line appears
     local cid
-    cid=$(podman run -d --memory=512m "$image" 2>/dev/null)
-    local secs="" attempt=0
-    while [ -z "$secs" ] && [ $attempt -lt 40 ]; do
+    cid=$(podman run -d --memory=512m -p "${MEASURE_PORT}:8080" "$image" 2>/dev/null)
+    local ms="" attempt=0
+    while [ -z "$ms" ] && [ $attempt -lt 40 ]; do
         sleep 0.5
-        secs=$(podman logs "$cid" 2>&1 | \
-               grep -oP 'Started \w+ in \K[\d\.]+' | head -1)
+        ms=$(curl -sf "http://localhost:${MEASURE_PORT}/startup-time" 2>/dev/null | \
+             grep -oP '"totalStartupMs"\s*:\s*\K[0-9]+')
         attempt=$((attempt + 1))
     done
     podman stop "$cid" > /dev/null 2>&1
     podman rm   "$cid" > /dev/null 2>&1
-    if [ -n "$secs" ]; then
-        echo "$secs" | awk '{printf "%d\n", $1 * 1000}'
-    else
-        echo "0"
-    fi
+    echo "${ms:-0}"
 }
 
 # ── Step 2: Run timing comparison ─────────────────────────────────
 hr
-echo -e "${BOLD}Step 2: Timing startup — ${RUNS} runs each (reading Spring Boot log)${RESET}"
-echo "  Each run: container start -> wait for 'Started ... in X seconds'"
+echo -e "${BOLD}Step 2: Timing startup — ${RUNS} runs each${RESET}"
+echo "  Each run: container start -> query /startup-time endpoint"
 echo
 
 baseline_times=()

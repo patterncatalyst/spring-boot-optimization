@@ -53,25 +53,23 @@ podman images springboot-leyden --format \
 echo
 
 # ── Startup measurement ──────────────────────────────────────────
-# Spring Boot logs: "Started LeydenDemoApp in X.XXX seconds"
+# Spring Boot 4.x removed the "Started X in N seconds" log line.
+# Query the app's /startup endpoint instead — returns {"startupMs": N, ...}
+MEASURE_PORT=8099
 measure_startup_ms() {
     local image=$1
     local cid
-    cid=$(podman run -d --memory=512m "$image" 2>/dev/null)
-    local secs="" attempt=0
-    while [ -z "$secs" ] && [ $attempt -lt 40 ]; do
+    cid=$(podman run -d --memory=512m -p "${MEASURE_PORT}:8080" "$image" 2>/dev/null)
+    local ms="" attempt=0
+    while [ -z "$ms" ] && [ $attempt -lt 40 ]; do
         sleep 0.5
-        secs=$(podman logs "$cid" 2>&1 | \
-               grep -oP 'Started \S+ in \K[\d\.]+' | head -1)
+        ms=$(curl -sf "http://localhost:${MEASURE_PORT}/startup" 2>/dev/null | \
+             grep -oP '"startupMs"\s*:\s*\K[0-9]+')
         attempt=$((attempt + 1))
     done
     podman stop "$cid" > /dev/null 2>&1
     podman rm   "$cid" > /dev/null 2>&1
-    if [ -n "$secs" ]; then
-        echo "$secs" | awk '{printf "%d\n", $1 * 1000}'
-    else
-        echo "0"
-    fi
+    echo "${ms:-0}"
 }
 
 hr
